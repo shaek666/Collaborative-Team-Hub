@@ -29,14 +29,18 @@ import { getApiErrorMessage } from '../../../../../lib/errors';
 
 export default function GoalsPage() {
   const { id: workspaceId } = useParams();
-  const { goals, fetchGoals, fetchGoalUpdates, addGoalUpdate, addGoal, pendingIds, goalUpdates } = useGoalStore();
+  const [goals, fetchGoals, fetchGoalUpdates, addGoalUpdate, addGoal, pendingIds, goalUpdates, addMilestone] = useGoalStore();
   const [loading, setLoading] = useState(true);
   const [expandedGoalId, setExpandedGoalId] = useState(null);
   const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
   const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [newGoalDueDate, setNewGoalDueDate] = useState('');
+  const [newGoalStatus, setNewGoalStatus] = useState('NOT_STARTED');
   const [addingGoal, setAddingGoal] = useState(false);
   const [updateContent, setUpdateContent] = useState('');
   const [postingUpdate, setPostingUpdate] = useState(false);
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
+  const [isAddingMilestone, setIsAddingMilestone] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -63,8 +67,13 @@ export default function GoalsPage() {
 
     setAddingGoal(true);
     try {
-      await addGoal(workspaceId, { title: newGoalTitle.trim() });
+      const payload = { title: newGoalTitle.trim() };
+      if (newGoalDueDate) payload.dueDate = new Date(newGoalDueDate);
+      if (newGoalStatus) payload.status = newGoalStatus;
+      await addGoal(workspaceId, payload);
       setNewGoalTitle('');
+      setNewGoalDueDate('');
+      setNewGoalStatus('NOT_STARTED');
       setIsAddGoalOpen(false);
     } catch {
     } finally {
@@ -83,6 +92,18 @@ export default function GoalsPage() {
     } catch {
     } finally {
       setPostingUpdate(false);
+    }
+  };
+
+  const handleAddMilestone = async (goalId) => {
+    if (!newMilestoneTitle.trim()) return;
+    setIsAddingMilestone(goalId);
+    try {
+      await addMilestone(workspaceId, goalId, { title: newMilestoneTitle.trim() });
+      setNewMilestoneTitle('');
+    } catch {
+    } finally {
+      setIsAddingMilestone(null);
     }
   };
 
@@ -130,6 +151,28 @@ export default function GoalsPage() {
             placeholder="Goal title"
             className="bg-slate-950/50 border-slate-800"
           />
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-slate-400">Due Date</label>
+            <Input
+              type="date"
+              value={newGoalDueDate}
+              onChange={(e) => setNewGoalDueDate(e.target.value)}
+              className="bg-slate-950/50 border-slate-800"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-slate-400">Status</label>
+            <select
+              value={newGoalStatus}
+              onChange={(e) => setNewGoalStatus(e.target.value)}
+              className="w-full rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            >
+              <option value="NOT_STARTED">Not Started</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="OVERDUE">Overdue</option>
+            </select>
+          </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setIsAddGoalOpen(false)}>
               Cancel
@@ -258,9 +301,36 @@ export default function GoalsPage() {
                                     </span>
                                   </div>
                                 ))}
-                                <Button variant="ghost" size="sm" className="w-full border-dashed border-slate-700 hover:border-slate-600">
-                                  <Plus className="w-4 h-4 mr-2" />
-                                  Add Milestone
+                                {isAddingMilestone === goal.id && (
+                                  <Input
+                                    autoFocus
+                                    value={newMilestoneTitle}
+                                    onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                                    placeholder="Milestone title"
+                                    className="bg-slate-950/50 border-slate-800"
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddMilestone(goal.id)}
+                                  />
+                                )}
+                                <Button variant="ghost" size="sm" className="w-full border-dashed border-slate-700 hover:border-slate-600"
+                                  onClick={() => {
+                                    if (isAddingMilestone === goal.id) {
+                                      handleAddMilestone(goal.id);
+                                    } else {
+                                      setIsAddingMilestone(goal.id);
+                                    }
+                                  }}
+                                >
+                                  {isAddingMilestone === goal.id ? (
+                                    <>
+                                      {isAddingMilestone === goal.id ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : null}
+                                      Save Milestone
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Plus className="w-4 h-4 mr-2" />
+                                      Add Milestone
+                                    </>
+                                  )}
                                 </Button>
                               </div>
                             </div>
