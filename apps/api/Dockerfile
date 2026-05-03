@@ -46,4 +46,4 @@ WORKDIR /app/apps/api
 EXPOSE 4000
 ENV PORT=4000
 
-CMD ["node", "src/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=prisma/schema.prisma && node src/server.js"]
