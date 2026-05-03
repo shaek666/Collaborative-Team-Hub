@@ -25,9 +25,8 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Generate Prisma client
-WORKDIR /app/apps/api
-RUN npx prisma generate
+# Generate Prisma client (from root so it goes into hoisted node_modules)
+RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 
 # 4. Runner stage
 FROM base AS runner
@@ -39,7 +38,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3
 
 # Copy production dependencies and built files
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/apps/api ./apps/api
 COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/package.json ./package.json
