@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '../../stores/authStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useNotificationStore } from '../../stores/notificationStore';
-import { useThemeStore } from '../../stores/themeStore';
 import { getSocket } from '../../lib/socket';
 import { CommandPalette } from '../../components/ui/CommandPalette';
 import { 
@@ -21,9 +20,7 @@ import {
   Plus,
   ChevronDown,
   Menu,
-  X,
-  Sun,
-  Moon
+  X
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
@@ -36,10 +33,10 @@ export default function DashboardLayout({ children }) {
   const { user, isAuthenticated, isLoading, logout, fetchMe } = useAuthStore();
   const { workspaces, activeWorkspace, fetchWorkspaces, setActiveWorkspace, setOnlineMembers } = useWorkspaceStore();
   const { notifications, fetchNotifications, addNotification, markAllAsRead } = useNotificationStore();
-  const { theme, initTheme, toggleTheme } = useThemeStore();
   const unreadCount = notifications.length;
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = React.useState(false);
+  const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const [hasCheckedAuth, setHasCheckedAuth] = React.useState(false);
 
   // Auth guard - fetch user on mount and redirect if not authenticated
@@ -70,10 +67,6 @@ export default function DashboardLayout({ children }) {
   }, [hasCheckedAuth, isAuthenticated, router]);
 
   useEffect(() => {
-    initTheme();
-  }, [initTheme]);
-
-  useEffect(() => {
     const loadShellData = async () => {
       try {
         await Promise.all([fetchWorkspaces(), fetchNotifications()]);
@@ -86,11 +79,14 @@ export default function DashboardLayout({ children }) {
 
   // Close workspace dropdown on outside click
   useEffect(() => {
-    if (!workspaceDropdownOpen) return;
-    const handleClick = () => setWorkspaceDropdownOpen(false);
+    if (!workspaceDropdownOpen && !notificationsOpen) return;
+    const handleClick = () => {
+      setWorkspaceDropdownOpen(false);
+      setNotificationsOpen(false);
+    };
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
-  }, [workspaceDropdownOpen]);
+  }, [workspaceDropdownOpen, notificationsOpen]);
 
   useEffect(() => {
     if (activeWorkspace) {
@@ -118,7 +114,7 @@ export default function DashboardLayout({ children }) {
   if (!hasCheckedAuth || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <div className="text-slate-500 dark:text-slate-400">Loading...</div>
+        <div className="text-slate-400">Loading...</div>
       </div>
     );
   }
@@ -142,7 +138,7 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="flex min-h-screen bg-slate-950 text-slate-100">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div 
@@ -154,10 +150,10 @@ export default function DashboardLayout({ children }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "w-64 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 backdrop-blur-xl flex flex-col fixed inset-y-0 z-50 transition-transform duration-300 ease-in-out",
+        "w-64 border-r border-slate-800 bg-slate-900/50 backdrop-blur-xl flex flex-col fixed inset-y-0 z-50 transition-transform duration-300 ease-in-out",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+        <div className="p-6 border-b border-slate-800">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]">
@@ -168,11 +164,11 @@ export default function DashboardLayout({ children }) {
             {/* Close button — mobile only */}
             <button
               type="button"
-              className="lg:hidden p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+              className="lg:hidden p-1 rounded-lg hover:bg-slate-800 transition-colors"
               onClick={() => setSidebarOpen(false)}
               aria-label="Close sidebar"
             >
-              <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              <X className="w-5 h-5 text-slate-400" />
             </button>
           </div>
 
@@ -180,7 +176,7 @@ export default function DashboardLayout({ children }) {
           <div className="relative">
             <button 
               type="button"
-              className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 transition-all"
+              className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-800/50 border border-slate-700 hover:border-slate-600 transition-all"
               onClick={(e) => { e.stopPropagation(); setWorkspaceDropdownOpen(!workspaceDropdownOpen); }}
               aria-expanded={workspaceDropdownOpen}
               aria-haspopup="listbox"
@@ -195,13 +191,13 @@ export default function DashboardLayout({ children }) {
                   {activeWorkspace?.name || 'Select Workspace'}
                 </span>
               </div>
-              <ChevronDown className={cn("w-4 h-4 text-slate-500 dark:text-slate-400 transition-transform", workspaceDropdownOpen && "rotate-180")} />
+              <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", workspaceDropdownOpen && "rotate-180")} />
             </button>
             
             {/* Dropdown */}
             {workspaceDropdownOpen && (
               <div 
-                className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50" 
+                className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50" 
                 role="listbox"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -211,7 +207,7 @@ export default function DashboardLayout({ children }) {
                     role="option"
                     aria-selected={activeWorkspace?.id === ws.id}
                     onClick={() => { setActiveWorkspace(ws); setWorkspaceDropdownOpen(false); }}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-800 transition-colors first:rounded-t-lg last:rounded-b-lg"
                   >
                     {ws.name}
                   </button>
@@ -219,7 +215,7 @@ export default function DashboardLayout({ children }) {
                 <Link 
                   href="/workspace/new" 
                   onClick={() => setWorkspaceDropdownOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-blue-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors border-t border-slate-200 dark:border-slate-800"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-blue-500 hover:bg-slate-800 transition-colors border-t border-slate-800"
                 >
                   <Plus className="w-4 h-4" />
                   New Workspace
@@ -242,7 +238,7 @@ export default function DashboardLayout({ children }) {
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                   isActive 
                     ? 'bg-blue-600/10 text-blue-500 border border-blue-600/20 shadow-[0_0_10px_rgba(37,99,235,0.1)]' 
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100',
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100',
                   link.disabled && 'opacity-50 cursor-not-allowed pointer-events-none'
                 )}
               >
@@ -254,40 +250,61 @@ export default function DashboardLayout({ children }) {
         </nav>
 
         {/* User Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+        <div className="p-4 border-t border-slate-800 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label="Notifications"
-                onClick={markAllAsRead}
-                disabled={unreadCount === 0}
-                className="relative disabled:cursor-default"
-              >
-                <Bell className="w-5 h-5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer transition-colors" />
-                {unreadCount > 0 && (
-                  <span
-                    role="status"
-                    aria-label={`${unreadCount} unread notifications`}
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border-2 border-slate-50 dark:border-slate-900"
-                  >
-                    {unreadCount}
-                  </span>
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-label="Notifications"
+                  onClick={(e) => { e.stopPropagation(); setNotificationsOpen(!notificationsOpen); }}
+                  className="relative"
+                >
+                  <Bell className="w-5 h-5 text-slate-400 hover:text-slate-100 cursor-pointer transition-colors" />
+                  {unreadCount > 0 && (
+                    <span
+                      role="status"
+                      aria-label={`${unreadCount} unread notifications`}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border-2 border-slate-950"
+                    >
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+                {notificationsOpen && (
+                  <div className="absolute bottom-full left-0 mb-2 w-80 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50" onClick={(e) => e.stopPropagation()}>
+                    <div className="p-3 border-b border-slate-800 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={markAllAsRead}
+                          className="text-xs text-blue-500 hover:text-blue-400"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <p className="p-4 text-sm text-slate-500 text-center">No notifications</p>
+                      ) : (
+                        notifications.slice(0, 10).map((n) => (
+                          <div key={n.id} className="p-3 border-b border-slate-800/50 hover:bg-slate-800/50">
+                            <p className="text-sm">{n.message}</p>
+                            <p className="text-xs text-slate-500 mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 )}
-              </button>
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
-                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4 text-slate-500 dark:text-slate-400" /> : <Moon className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
-              </button>
               <button 
                 onClick={handleLogout}
-                className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-rose-500 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors"
                 aria-label="Log out"
               >
                 <LogOut className="w-4 h-4" />
@@ -295,8 +312,8 @@ export default function DashboardLayout({ children }) {
             </div>
           </div>
           
-          <Link href="/profile" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-all group">
-            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 overflow-hidden flex-shrink-0 group-hover:border-blue-500/50 transition-colors">
+          <Link href="/profile" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800 transition-all group">
+            <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex-shrink-0 group-hover:border-blue-500/50 transition-colors">
               {user?.avatarUrl ? (
                 <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
               ) : (
@@ -307,7 +324,7 @@ export default function DashboardLayout({ children }) {
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-medium truncate group-hover:text-blue-400 transition-colors">{user?.name}</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{user?.email}</p>
+              <p className="text-xs text-slate-500 truncate">{user?.email}</p>
             </div>
           </Link>
         </div>
@@ -316,14 +333,14 @@ export default function DashboardLayout({ children }) {
       {/* Main Content */}
       <main className="flex-1 min-h-screen overflow-x-hidden relative lg:ml-64">
         {/* Mobile top bar */}
-        <div className="sticky top-0 z-30 flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm lg:hidden">
+        <div className="sticky top-0 z-30 flex items-center gap-3 p-4 border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm lg:hidden">
           <button
             type="button"
-            className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open sidebar"
           >
-            <Menu className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            <Menu className="w-5 h-5 text-slate-400" />
           </button>
           <div className="flex items-center gap-2">
             <div 

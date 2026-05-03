@@ -30,6 +30,7 @@ export default function MembersPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [openMemberMenu, setOpenMemberMenu] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -63,6 +64,20 @@ export default function MembersPage() {
       toast.error(getApiErrorMessage(error, 'Failed to send invite'));
     } finally {
       setInviting(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId, userName) => {
+    if (!confirm(`Remove ${userName} from this workspace?`)) return;
+    try {
+      await api.delete(`/workspaces/${workspaceId}/members/${userId}`);
+      toast.success(`${userName} removed`);
+      await fetchWorkspaces();
+      const current = workspaces.find((ws) => ws.id === workspaceId);
+      if (current) await setActiveWorkspace(current);
+      setOpenMemberMenu(null);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to remove member'));
     }
   };
 
@@ -139,9 +154,22 @@ export default function MembersPage() {
                             {member.role === 'ADMIN' ? <ShieldCheck className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
                             {member.role}
                           </Badge>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Options for ${member.user?.name}`}>
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
+                          <div className="relative">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Options for ${member.user?.name}`} onClick={(e) => { e.stopPropagation(); setOpenMemberMenu(openMemberMenu === member.userId ? null : member.userId); }}>
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                            {openMemberMenu === member.userId && (
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50 py-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveMember(member.userId, member.user?.name)}
+                                  className="w-full text-left px-3 py-2 text-sm text-rose-400 hover:bg-slate-800 transition-colors"
+                                >
+                                  Remove member
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );

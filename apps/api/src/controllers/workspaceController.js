@@ -135,8 +135,10 @@ export const inviteMember = async (req, res, next) => {
       })
     ]);
 
-    // Send email invitation
-    await sendWorkspaceInviteEmail(user.email, workspace.name, req.user.name);
+    // Send email invitation (non-blocking)
+    sendWorkspaceInviteEmail(user.email, workspace.name, req.user.name).catch(() => {
+      // Silently fail email sending
+    });
 
     // Notify the user about the new invite via Socket.io
     req.app.get('io').sockets.sockets.forEach((socket) => {
@@ -168,6 +170,36 @@ export const changeMemberRole = async (req, res, next) => {
       }
     });
     res.json(member);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeMember = async (req, res, next) => {
+  try {
+    const { id, userId } = req.params;
+    
+    // Prevent removing the last admin
+    const workspaceMembers = await prisma.workspaceMember.findMany({
+      where: { workspaceId: id },
+      select: { userId: true, role: true }
+    });
+    
+    const targetMember = workspaceMembers.find(m => m.userId === userId);
+    if (!targetMember) return sendError(res, 404, 'Member not found');
+    
+    if (targetMember.role === 'ADMIN') {
+      const adminCount = workspaceMembers.filter(m => m.role === 'ADMIN').length;
+      if (adminCount <= 1) {
+        return sendError(res, 400, 'Cannot remove the last admin');
+      }
+    }
+
+    await prisma.workspaceMember.delete({
+      where: { userId_workspaceId: { userId, workspaceId: id } }
+    });
+
+    res.json({ success: true });
   } catch (error) {
     next(error);
   }

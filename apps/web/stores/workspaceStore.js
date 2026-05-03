@@ -13,15 +13,20 @@ export const useWorkspaceStore = create(
       fetchWorkspaces: async () => {
         try {
           const res = await api.get('/workspaces');
-          set({ workspaces: res.data });
           const currentActive = get().activeWorkspace;
-          if (res.data.length > 0) {
-            const match = currentActive 
-              ? res.data.find((ws) => ws.id === currentActive.id)
-              : res.data[0];
-            if (match) {
-              await get().setActiveWorkspace(match);
-            }
+          let match = currentActive 
+            ? res.data.find((ws) => ws.id === currentActive.id)
+            : null;
+          
+          if (!match && res.data.length > 0) {
+            match = res.data[0];
+          }
+
+          if (match && res.data.length > 0) {
+            const wsRes = await api.get(`/workspaces/${match.id}`);
+            set({ workspaces: res.data, activeWorkspace: match, members: wsRes.data.members });
+          } else {
+            set({ workspaces: res.data, activeWorkspace: match, members: [] });
           }
         } catch (error) {
           throw error;

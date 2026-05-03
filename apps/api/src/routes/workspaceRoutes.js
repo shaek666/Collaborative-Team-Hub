@@ -210,4 +210,30 @@ router.post('/:id/invite', rbac(PERMISSIONS.MEMBERS_INVITE), workspaceController
  */
 router.patch('/:id/members/:userId/role', rbac(PERMISSIONS.MEMBERS_MANAGE_ROLES), workspaceController.changeMemberRole);
 
+/**
+ * @openapi
+ * /workspaces/{id}/members/{userId}:
+ *   delete:
+ *     tags: [Workspaces]
+ *     summary: Remove member
+ *     description: Removes a member from the workspace. Requires Admin role.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Member removed
+ */
+router.delete('/:id/members/:userId', rbac(PERMISSIONS.MEMBERS_MANAGE_ROLES), workspaceController.removeMember);
+
 export default router;

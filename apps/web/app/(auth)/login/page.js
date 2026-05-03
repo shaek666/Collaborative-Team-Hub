@@ -39,7 +39,9 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       router.push('/dashboard');
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Login failed'));
+      const msg = getApiErrorMessage(error, 'Invalid email or password');
+      setValidationError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
