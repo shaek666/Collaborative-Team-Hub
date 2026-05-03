@@ -40,8 +40,8 @@ USER nextjs
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 
-WORKDIR /app
+WORKDIR /app/apps/web
 EXPOSE 3000
 ENV HOSTNAME=0.0.0.0
 
-CMD ["node", "server.js"]
+CMD ["node", "/app/apps/web/server.js"]
