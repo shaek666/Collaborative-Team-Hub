@@ -258,9 +258,15 @@ export default function AnnouncementsPage() {
                   </button>
                 </div>
               )}
-              <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <SmilePlus className="w-4 h-4" />
-              </Button>
+               <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => {
+                 // Simple emoji insert
+                 const emojis = ['😊', '👍', '🎉', '🚀', '❤️', '🔥'];
+                 const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+                 const newContent = newAnnouncement + randomEmoji;
+                 setNewAnnouncement(newContent);
+               }}>
+                 <SmilePlus className="w-4 h-4" />
+               </Button>
             </div>
             <Button type="submit" size="sm" disabled={!stripHtml(newAnnouncement).trim()} className="gap-2">
               <Send className="w-3.5 h-3.5" />
