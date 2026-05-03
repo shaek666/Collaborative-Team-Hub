@@ -31,16 +31,20 @@ ENV NODE_ENV=production
 # Install required system dependencies for Prisma
 RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN groupadd --system --gid 1001 nodejs
-RUN useradd --system --uid 1001 expressjs
-USER expressjs
-
 # Copy built files and necessary production dependencies
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api ./apps/api
 COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/package.json ./package.json
+
+# Create non-root user
+RUN groupadd --system --gid 1001 nodejs
+RUN useradd --system --uid 1001 expressjs
+
+# Make Prisma directories writable for runtime migrations
+RUN chown -R expressjs:nodejs /app/node_modules/@prisma
+
+USER expressjs
 
 WORKDIR /app/apps/api
 EXPOSE 4000
