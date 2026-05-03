@@ -346,7 +346,7 @@ export default function GoalsPage() {
                                   className="bg-slate-950/50 border-slate-800 text-sm"
                                   disabled={postingUpdate}
                                 />
-                                <Button type="submit" size="sm" disabled={postingUpdate || !updateContent.trim()}>
+                                <Button type="submit" size="sm" disabled={postingUpdate || !updateContent.trim()} aria-label="Post update">
                                   {postingUpdate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                                 </Button>
                               </form>

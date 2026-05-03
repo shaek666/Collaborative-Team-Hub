@@ -124,7 +124,7 @@ test.describe('Collaborative Team Hub E2E', () => {
     // Post an update
     const updateContent = `Test update-${Date.now()}`;
     await page.getByPlaceholder('Post an update...').fill(updateContent);
-    await page.getByRole('button', { name: /send/i }).click();
+    await page.getByRole('button', { name: /post update/i }).click();
 
     await expect(page.getByText(updateContent)).toBeVisible({ timeout: 15000 });
   });
