@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  const token = request.cookies.get('accessToken')?.value;
   const { pathname } = request.nextUrl;
 
   // Paths that don't require authentication
   const isPublicPath = pathname === '/login' || pathname === '/register';
 
-  if (!token && !isPublicPath) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  if (token && isPublicPath) {
-    return NextResponse.redirect(new URL('/', request.url));
+  // We can't check the accessToken cookie here because it's set on the API domain (cross-domain).
+  // Auth redirection for logged-in users is handled client-side via fetchMe + router.
+  if (!isPublicPath) {
+    // For protected routes, we allow the request through.
+    // The client-side auth store will handle redirecting unauthenticated users.
+    return NextResponse.next();
   }
 
   return NextResponse.next();
