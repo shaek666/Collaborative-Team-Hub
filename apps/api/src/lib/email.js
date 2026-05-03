@@ -1,28 +1,12 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-let transporter;
-
-export const getTransporter = () => {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-  }
-  return transporter;
-};
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendWorkspaceInviteEmail = async (toEmail, workspaceName, inviterName) => {
-  if (!process.env.SMTP_USER) return; // Skip if email not configured
+  if (!process.env.RESEND_API_KEY) return;
 
-  const transporter = getTransporter();
-  await transporter.sendMail({
-    from: `"TeamHub" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: 'TeamHub <onboarding@resend.dev>',
     to: toEmail,
     subject: `You've been invited to join ${workspaceName}`,
     html: `
@@ -40,11 +24,10 @@ export const sendWorkspaceInviteEmail = async (toEmail, workspaceName, inviterNa
 };
 
 export const sendMentionEmail = async (toEmail, mentionedByName, message, workspaceName) => {
-  if (!process.env.SMTP_USER) return;
+  if (!process.env.RESEND_API_KEY) return;
 
-  const transporter = getTransporter();
-  await transporter.sendMail({
-    from: `"TeamHub" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: 'TeamHub <onboarding@resend.dev>',
     to: toEmail,
     subject: `${mentionedByName} mentioned you in ${workspaceName}`,
     html: `

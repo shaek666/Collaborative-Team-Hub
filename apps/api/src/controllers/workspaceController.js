@@ -99,6 +99,12 @@ export const inviteMember = async (req, res, next) => {
     });
     if (!user) return sendError(res, 404, 'User with this email not found');
 
+    // Check if user is already a member
+    const existingMember = await prisma.workspaceMember.findUnique({
+      where: { userId_workspaceId: { userId: user.id, workspaceId: id } }
+    });
+    if (existingMember) return sendError(res, 400, 'User is already a member of this workspace');
+
     const workspace = await prisma.workspace.findUnique({
       where: { id },
       select: { name: true }
