@@ -14,8 +14,14 @@ export const useWorkspaceStore = create(
         try {
           const res = await api.get('/workspaces');
           set({ workspaces: res.data });
-          if (res.data.length > 0 && !get().activeWorkspace) {
-            await get().setActiveWorkspace(res.data[0]);
+          const currentActive = get().activeWorkspace;
+          if (res.data.length > 0) {
+            const match = currentActive 
+              ? res.data.find((ws) => ws.id === currentActive.id)
+              : res.data[0];
+            if (match) {
+              await get().setActiveWorkspace(match);
+            }
           }
         } catch (error) {
           throw error;

@@ -25,7 +25,7 @@ import { getApiErrorMessage } from '../../../../../lib/errors';
 
 export default function MembersPage() {
   const { id: workspaceId } = useParams();
-  const { members, onlineMembers, fetchWorkspaces } = useWorkspaceStore();
+  const { members, onlineMembers, fetchWorkspaces, setActiveWorkspace, workspaces } = useWorkspaceStore();
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
@@ -35,6 +35,11 @@ export default function MembersPage() {
     const load = async () => {
       try {
         await fetchWorkspaces();
+        // Also refresh the current workspace to get latest members
+        const current = workspaces.find((ws) => ws.id === workspaceId);
+        if (current) {
+          await setActiveWorkspace(current);
+        }
       } catch (error) {
         toast.error('Failed to load members');
       } finally {
@@ -42,7 +47,7 @@ export default function MembersPage() {
       }
     };
     load();
-  }, [workspaceId, fetchWorkspaces]);
+  }, [workspaceId, fetchWorkspaces, setActiveWorkspace, workspaces]);
 
   const handleInvite = async (e) => {
     e.preventDefault();
