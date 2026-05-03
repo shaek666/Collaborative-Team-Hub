@@ -32,7 +32,13 @@ export default function RootLayout({ children }) {
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js').catch(() => {});
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                      registration.unregister();
+                    }
+                  }).then(() => {
+                    navigator.serviceWorker.register('/sw.js').catch(() => {});
+                  });
                 });
               }
             `,

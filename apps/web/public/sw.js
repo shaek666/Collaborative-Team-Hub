@@ -1,9 +1,5 @@
-const CACHE_NAME = 'teamhub-v1';
+const CACHE_NAME = 'teamhub-v2';
 const STATIC_ASSETS = [
-  '/',
-  '/login',
-  '/register',
-  '/dashboard',
   '/manifest.json',
   '/favicon.ico',
 ];
@@ -11,7 +7,6 @@ const STATIC_ASSETS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      // Cache assets one by one, skipping failures
       for (const asset of STATIC_ASSETS) {
         try {
           const response = await fetch(asset);
@@ -44,22 +39,26 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   if (event.request.url.includes('/api/')) return;
 
+  const isNavigation = event.request.mode === 'navigate';
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+      // Never serve cached redirects or HTML pages — always go to network first
+      if (isNavigation || !cached) {
+        return fetch(event.request)
+          .then((response) => {
+            if (response && response.status === 200 && response.type === 'basic') {
+              const responseClone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseClone);
+              });
+            }
             return response;
-          }
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-          return response;
-        })
-        .catch(() => cached);
+          })
+          .catch(() => cached);
+      }
 
-      return cached || networkFetch;
+      return cached;
     })
   );
 });
