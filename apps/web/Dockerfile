@@ -24,8 +24,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 
 WORKDIR /app/apps/web
-ENV PATH="/app/node_modules/.bin:$PATH"
-RUN next build
+RUN /app/node_modules/.bin/next build
 
 # 3. Runner stage
 FROM base AS runner
