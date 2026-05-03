@@ -23,8 +23,8 @@ ARG NEXT_PUBLIC_SOCKET_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 
-WORKDIR /app/apps/web
-RUN node /app/node_modules/next/dist/bin/next build
+WORKDIR /app
+RUN npm --workspace=web run build
 
 # 3. Runner stage
 FROM base AS runner
