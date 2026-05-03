@@ -10,6 +10,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 RUN npm ci
+RUN npm install --no-save turbo@latest
 
 # 2. Builder stage
 FROM base AS builder
@@ -24,7 +25,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 
 WORKDIR /app
-RUN npm --workspace=web exec -- next build
+RUN /app/node_modules/.bin/turbo run build --filter=web
 
 # 3. Runner stage
 FROM base AS runner
