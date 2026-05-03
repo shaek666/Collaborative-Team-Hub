@@ -6,17 +6,14 @@ RUN corepack enable
 
 # 1. Dependencies stage
 FROM base AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
-COPY packages/shared/package.json ./packages/shared/
+WORKDIR /app/apps/web
+COPY apps/web/package.json ./
 RUN npm ci
 
 # 2. Builder stage
 FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+WORKDIR /app/apps/web
+COPY --from=deps /app/apps/web/node_modules ./node_modules
 COPY . .
 
 # Build arguments for public env vars
@@ -25,8 +22,7 @@ ARG NEXT_PUBLIC_SOCKET_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 
-WORKDIR /app
-RUN /app/node_modules/.bin/turbo run build --filter=web
+RUN npm run build
 
 # 3. Runner stage
 FROM base AS runner
