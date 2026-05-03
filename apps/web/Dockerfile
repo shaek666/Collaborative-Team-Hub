@@ -10,7 +10,6 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 RUN npm ci
-RUN npm install --no-save turbo@latest
 
 # 2. Builder stage
 FROM base AS builder
