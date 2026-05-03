@@ -1,0 +1,50 @@
+# Build outputs (Dockerfiles generate these themselves)
+.next/
+dist/
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docs & planning (not needed for deploy)
+plan/
+spec/
+docs/
+AGENTS.md
+SPEC.md
+Project_Architecture_Blueprint.md
+
+# AI agent stuff
+.agents/
+skills/
+SKILL.md
+.github/
+
+# E2E / test
+e2e/
+playwright-report/
+test-results/
+playwright.config.js
+coverage/
+.nyc_output/
+
+# Turborepo cache
+.turbo/
+
+# Logs
+*.log
