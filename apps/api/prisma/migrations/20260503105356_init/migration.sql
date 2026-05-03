@@ -100,6 +100,7 @@ CREATE TABLE "Announcement" (
     "workspaceId" TEXT NOT NULL,
     "authorId" TEXT NOT NULL,
     "content" TEXT NOT NULL,
+    "attachmentUrl" TEXT,
     "isPinned" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
