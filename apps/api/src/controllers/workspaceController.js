@@ -1,0 +1,159 @@
+import prisma from '../lib/prisma.js';
+import { sendError } from '../utils/httpResponses.js';
+
+export const listWorkspaces = async (req, res, next) => {
+  try {
+    const memberships = await prisma.workspaceMember.findMany({
+      where: { userId: req.user.id },
+      select: {
+        role: true,
+        joinedAt: true,
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            accentColour: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+    res.json(memberships.map(m => ({ ...m.workspace, userRole: m.role, joinedAt: m.joinedAt })));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createWorkspace = async (req, res, next) => {
+  try {
+    const { name, description, accentColour } = req.body;
+    // Prisma nested create handles the transaction automatically
+    const workspace = await prisma.workspace.create({
+      data: {
+        name,
+        description,
+        accentColour,
+        members: {
+          create: {
+            userId: req.user.id,
+            role: 'ADMIN'
+          }
+        }
+      }
+    });
+    res.status(201).json(workspace);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getWorkspace = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const workspace = await prisma.workspace.findUnique({
+      where: { id },
+      include: {
+        members: {
+          select: {
+            role: true,
+            joinedAt: true,
+            user: {
+              select: { id: true, name: true, email: true, avatarUrl: true }
+            }
+          }
+        }
+      }
+    });
+    if (!workspace) return sendError(res, 404, 'Workspace not found');
+    res.json(workspace);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateWorkspace = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, description, accentColour } = req.body;
+    const workspace = await prisma.workspace.update({
+      where: { id },
+      data: { name, description, accentColour }
+    });
+    res.json(workspace);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const inviteMember = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { email, role } = req.body;
+    
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      select: { id: true } 
+    });
+    if (!user) return sendError(res, 404, 'User with this email not found');
+
+    // Use transaction to create member and potentially a notification
+    const [member] = await prisma.$transaction([
+      prisma.workspaceMember.create({
+        data: {
+          workspaceId: id,
+          userId: user.id,
+          role: role || 'MEMBER'
+        },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, avatarUrl: true }
+          },
+          workspace: { select: { name: true } }
+        }
+      }),
+      prisma.notification.create({
+        data: {
+          userId: user.id,
+          workspaceId: id,
+          type: 'WORKSPACE_INVITE',
+          message: `You have been invited to join the workspace.`
+        }
+      })
+    ]);
+
+    // Notify the user about the new invite
+    req.app.get('io').sockets.sockets.forEach((socket) => {
+      if (socket.user?.userId === user.id) {
+        socket.emit('notification:new', {
+          type: 'WORKSPACE_INVITE',
+          message: `You have been invited to join the workspace.`
+        });
+      }
+    });
+
+    res.json(member);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const changeMemberRole = async (req, res, next) => {
+  try {
+    const { id, userId } = req.params;
+    const { role } = req.body;
+    const member = await prisma.workspaceMember.update({
+      where: { userId_workspaceId: { userId, workspaceId: id } },
+      data: { role },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, avatarUrl: true }
+        }
+      }
+    });
+    res.json(member);
+  } catch (error) {
+    next(error);
+  }
+};

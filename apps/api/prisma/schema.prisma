@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceRole {
+  ADMIN
+  MANAGER
+  MEMBER
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ActionItemStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  // Relations
+  memberships           WorkspaceMember[]
+  goalsOwned            Goal[]
+  goalUpdates           GoalUpdate[]
+  actionItemsAssigned   ActionItem[]
+  announcementsAuthored Announcement[]
+  announcementReactions AnnouncementReaction[]
+  commentsAuthored      Comment[]
+  notifications         Notification[]
+
+  @@index([email])
+}
+
+model Workspace {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  accentColour String?  @default("#3b82f6")
+  createdAt    DateTime @default(now())
+
+  // Relations
+  members       WorkspaceMember[]
+  goals         Goal[]
+  actionItems   ActionItem[]
+  announcements Announcement[]
+  notifications Notification[]
+}
+
+model WorkspaceMember {
+  userId      String
+  workspaceId String
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@id([userId, workspaceId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model Goal {
+  id          String     @id @default(uuid())
+  title       String
+  ownerId     String
+  workspaceId String
+  dueDate     DateTime?
+  status      GoalStatus @default(NOT_STARTED)
+  createdAt   DateTime   @default(now())
+
+  // Relations
+  owner       User         @relation(fields: [ownerId], references: [id])
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  milestones  Milestone[]
+  updates     GoalUpdate[]
+  actionItems ActionItem[]
+
+  @@index([workspaceId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Milestone {
+  id              String  @id @default(uuid())
+  goalId          String
+  title           String
+  progressPercent Int     @default(0)
+  completed       Boolean @default(false)
+
+  // Relations
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+}
+
+model GoalUpdate {
+  id        String   @id @default(uuid())
+  goalId    String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  goal   Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([goalId])
+  @@index([authorId])
+}
+
+model ActionItem {
+  id          String           @id @default(uuid())
+  title       String
+  workspaceId String
+  goalId      String?
+  assigneeId  String
+  priority    Priority         @default(MEDIUM)
+  status      ActionItemStatus @default(TODO)
+  dueDate     DateTime?
+  createdAt   DateTime         @default(now())
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  goal      Goal?     @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  assignee  User      @relation(fields: [assigneeId], references: [id])
+
+  @@index([workspaceId])
+  @@index([assigneeId])
+  @@index([goalId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  workspaceId String
+  authorId    String
+  content     String
+  isPinned    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  workspace Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  author    User                   @relation(fields: [authorId], references: [id])
+  reactions AnnouncementReaction[]
+  comments  Comment[]
+
+  @@index([workspaceId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model AnnouncementReaction {
+  id             String @id @default(uuid())
+  announcementId String
+  userId         String
+  emoji          String
+
+  // Relations
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId, emoji])
+  @@index([announcementId])
+  @@index([userId])
+}
+
+model Comment {
+  id             String   @id @default(uuid())
+  announcementId String
+  authorId       String
+  content        String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  author       User         @relation(fields: [authorId], references: [id])
+
+  @@index([announcementId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  workspaceId String?
+  type        String
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([createdAt])
+}
