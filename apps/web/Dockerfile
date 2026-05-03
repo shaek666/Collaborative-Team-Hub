@@ -11,12 +11,13 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
-RUN npm ci
+RUN npm ci --workspaces
 
 # 2. Builder stage
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .
 ENV PATH="/app/node_modules/.bin:$PATH"
 
@@ -26,7 +27,7 @@ ARG NEXT_PUBLIC_SOCKET_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 
-RUN cd apps/web && /app/node_modules/.bin/next build
+RUN cd apps/web && node_modules/.bin/next build
 
 # 3. Runner stage
 FROM base AS runner
