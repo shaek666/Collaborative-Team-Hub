@@ -3,9 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useActionItemStore } from '../../../../../stores/actionItemStore';
+import { useAuthStore } from '../../../../../stores/authStore';
+import { useWorkspaceStore } from '../../../../../stores/workspaceStore';
 import { Card, CardContent } from '../../../../../components/ui/Card';
 import { Button } from '../../../../../components/ui/Button';
 import { Badge } from '../../../../../components/ui/Badge';
+import { Input } from '../../../../../components/ui/Input';
 import { EmptyState } from '../../../../../components/ui/EmptyState';
 import { LoadingState } from '../../../../../components/ui/LoadingState';
 import { 
@@ -15,7 +18,9 @@ import {
   Calendar,
   User,
   MoreVertical,
-  Clock
+  Clock,
+  X,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -33,9 +38,14 @@ const COLUMNS = [
 
 export default function ActionItemsPage() {
   const { id: workspaceId } = useParams();
-  const { items, fetchItems, updateItemStatus, pendingIds } = useActionItemStore();
+  const { items, fetchItems, updateItemStatus, createItem, pendingIds } = useActionItemStore();
+  const { user } = useAuthStore();
+  const { members } = useWorkspaceStore();
   const [view, setView] = useState('kanban'); // 'kanban' | 'list'
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newItem, setNewItem] = useState({ title: '', description: '', priority: 'MEDIUM', dueDate: '', assigneeId: '' });
 
   useEffect(() => {
     const load = async () => {
@@ -49,6 +59,26 @@ export default function ActionItemsPage() {
     };
     load();
   }, [workspaceId, fetchItems]);
+
+  const handleCreateItem = async (e) => {
+    e.preventDefault();
+    if (!newItem.title.trim()) return;
+    setCreating(true);
+    try {
+      await createItem(workspaceId, {
+        ...newItem,
+        assigneeId: newItem.assigneeId || null,
+        dueDate: newItem.dueDate || null,
+      });
+      toast.success('Action item created');
+      setNewItem({ title: '', description: '', priority: 'MEDIUM', dueDate: '', assigneeId: '' });
+      setShowCreateModal(false);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to create action item'));
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const onDragEnd = async (result) => {
     const { destination, draggableId } = result;
@@ -98,12 +128,77 @@ export default function ActionItemsPage() {
               <ListIcon className="w-4 h-4" />
             </button>
           </div>
-          <Button className="gap-2">
+          <Button onClick={() => setShowCreateModal(true)} className="gap-2">
             <Plus className="w-4 h-4" />
             New Item
           </Button>
         </div>
       </div>
+
+      {/* Create Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowCreateModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold">Create Action Item</h2>
+                <button onClick={() => setShowCreateModal(false)} className="p-1.5 rounded-lg hover:bg-slate-800">
+                  <X className="w-4 h-4 text-slate-400" />
+                </button>
+              </div>
+              <form onSubmit={handleCreateItem} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-300 mb-1 block">Title</label>
+                  <Input value={newItem.title} onChange={(e) => setNewItem({ ...newItem, title: e.target.value })} placeholder="What needs to be done?" required className="bg-slate-950/50 border-slate-800" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300 mb-1 block">Description</label>
+                  <textarea value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} placeholder="Add details..." rows={3} className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 resize-none" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-slate-300 mb-1 block">Priority</label>
+                    <select value={newItem.priority} onChange={(e) => setNewItem({ ...newItem, priority: e.target.value })} className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500/50">
+                      <option value="LOW">Low</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HIGH">High</option>
+                      <option value="URGENT">Urgent</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-300 mb-1 block">Due Date</label>
+                    <input type="date" value={newItem.dueDate} onChange={(e) => setNewItem({ ...newItem, dueDate: e.target.value })} className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500/50" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300 mb-1 block">Assignee</label>
+                  <select value={newItem.assigneeId} onChange={(e) => setNewItem({ ...newItem, assigneeId: e.target.value })} className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500/50">
+                    <option value="">Unassigned</option>
+                    {members.map(m => (
+                      <option key={m.user.id} value={m.user.id}>{m.user.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <Button type="submit" className="w-full" disabled={creating || !newItem.title.trim()}>
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create'}
+                </Button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {loading ? (
         <LoadingState label="Loading action items" className="flex-1" />
@@ -126,7 +221,7 @@ export default function ActionItemsPage() {
                       {items.filter(i => i.status === column.id).length}
                     </Badge>
                   </div>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setShowCreateModal(true)}>
                     <Plus className="w-3.5 h-3.5" />
                   </Button>
                 </div>

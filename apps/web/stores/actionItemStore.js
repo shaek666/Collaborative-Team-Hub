@@ -58,4 +58,16 @@ export const useActionItemStore = create((set, get) => ({
       throw error;
     }
   },
+
+  createItem: async (workspaceId, data) => {
+    try {
+      const res = await api.post(`/workspaces/${workspaceId}/action-items`, data);
+      set((state) => ({
+        items: [res.data, ...state.items],
+      }));
+      return res.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 }));

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '../../stores/authStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useNotificationStore } from '../../stores/notificationStore';
+import { useThemeStore } from '../../stores/themeStore';
 import { getSocket } from '../../lib/socket';
 import { CommandPalette } from '../../components/ui/CommandPalette';
 import { 
@@ -20,7 +21,9 @@ import {
   Plus,
   ChevronDown,
   Menu,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
@@ -33,6 +36,7 @@ export default function DashboardLayout({ children }) {
   const { user, isAuthenticated, isLoading, logout, fetchMe } = useAuthStore();
   const { workspaces, activeWorkspace, fetchWorkspaces, setActiveWorkspace, setOnlineMembers } = useWorkspaceStore();
   const { notifications, fetchNotifications, addNotification, markAllAsRead } = useNotificationStore();
+  const { theme, initTheme, toggleTheme } = useThemeStore();
   const unreadCount = notifications.length;
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = React.useState(false);
@@ -65,6 +69,10 @@ export default function DashboardLayout({ children }) {
       router.push('/login');
     }
   }, [hasCheckedAuth, isAuthenticated, router]);
+
+  useEffect(() => {
+    initTheme();
+  }, [initTheme]);
 
   useEffect(() => {
     const loadShellData = async () => {
@@ -302,6 +310,14 @@ export default function DashboardLayout({ children }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button 
+                type="button"
+                onClick={toggleTheme}
+                className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4 text-slate-400" /> : <Moon className="w-4 h-4 text-slate-400" />}
+              </button>
               <button 
                 onClick={handleLogout}
                 className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors"

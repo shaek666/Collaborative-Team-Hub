@@ -50,6 +50,13 @@ export default function MembersPage() {
     load();
   }, [workspaceId, fetchWorkspaces, setActiveWorkspace, workspaces]);
 
+  useEffect(() => {
+    if (!openMemberMenu) return;
+    const handleClick = () => setOpenMemberMenu(null);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [openMemberMenu]);
+
   const handleInvite = async (e) => {
     e.preventDefault();
     if (!inviteEmail) return;
@@ -158,8 +165,8 @@ export default function MembersPage() {
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Options for ${member.user?.name}`} onClick={(e) => { e.stopPropagation(); setOpenMemberMenu(openMemberMenu === member.userId ? null : member.userId); }}>
                               <MoreVertical className="w-4 h-4" />
                             </Button>
-                            {openMemberMenu === member.userId && (
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50 py-1">
+                            {openMemberMenu === member.userId && member.role !== 'ADMIN' && (
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveMember(member.userId, member.user?.name)}
