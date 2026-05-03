@@ -49,7 +49,9 @@ export default function DashboardLayout({ children }) {
       setHasCheckedAuth(true);
       return;
     }
-    const checkAuth = async () => {
+    // Add a small delay to allow Zustand state updates from login to propagate
+    // before overwriting them with fetchMe()
+    const timer = setTimeout(async () => {
       try {
         await fetchMe();
       } catch (error) {
@@ -57,8 +59,8 @@ export default function DashboardLayout({ children }) {
       } finally {
         setHasCheckedAuth(true);
       }
-    };
-    checkAuth();
+    }, 200);
+    return () => clearTimeout(timer);
   }, [fetchMe, user]);
 
   useEffect(() => {
