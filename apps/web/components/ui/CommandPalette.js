@@ -95,12 +95,12 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={open}
-        className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-500 bg-slate-800/50 border border-slate-700/50 rounded-md hover:bg-slate-700/50 transition-colors"
+        className="flex items-center gap-2 px-2 py-1.5 text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
         aria-label="Open command palette"
       >
         <Command className="w-3 h-3" />
         <span className="hidden lg:inline">Search...</span>
-        <kbd className="hidden lg:inline px-1 py-0.5 text-[10px] bg-slate-700 rounded">⌘K</kbd>
+        <kbd className="hidden lg:inline px-1 py-0.5 text-[10px] bg-slate-100 dark:bg-slate-700 rounded">⌘K</kbd>
       </button>
 
       <AnimatePresence>
@@ -109,19 +109,19 @@ export function CommandPalette() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] bg-slate-950/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh] bg-slate-950/60 dark:bg-slate-950/60 backdrop-blur-sm"
             onClick={close}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden"
+              className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl overflow-hidden"
               role="dialog"
               aria-label="Search commands"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-800">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
                 <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 <input
                   ref={inputRef}
@@ -133,10 +133,10 @@ export function CommandPalette() {
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder="Navigate to..."
-                  className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+                  className="flex-1 bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   aria-label="Search commands"
                 />
-                <kbd className="px-1.5 py-0.5 text-xs text-slate-500 bg-slate-800 rounded">ESC</kbd>
+                <kbd className="px-1.5 py-0.5 text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 rounded">ESC</kbd>
               </div>
 
               <div className="max-h-72 overflow-y-auto p-2">
@@ -154,26 +154,26 @@ export function CommandPalette() {
                         className={cn(
                           'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
                           isActive 
-                            ? 'bg-blue-600/10 text-blue-500' 
+                            ? 'bg-blue-600/10 text-blue-600 dark:text-blue-500' 
                             : i === selectedIndex 
-                              ? 'bg-slate-800 text-slate-100' 
-                              : 'text-slate-400 hover:bg-slate-800/50'
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100' 
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
                         )}
                         role="option"
                         aria-selected={i === selectedIndex}
                       >
                         <Icon className="w-4 h-4 flex-shrink-0" />
                         <span className="flex-1 text-left">{cmd.label}</span>
-                        {isActive && <span className="text-xs text-blue-500 font-medium">Active</span>}
+                        {isActive && <span className="text-xs text-blue-600 dark:text-blue-500 font-medium">Active</span>}
                       </button>
                     );
                   })
                 )}
               </div>
 
-              <div className="px-4 py-2 border-t border-slate-800 flex items-center gap-4 text-xs text-slate-500">
-                <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-slate-800 rounded">↑↓</kbd> Navigate</span>
-                <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-slate-800 rounded">↵</kbd> Select</span>
+              <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-800 flex items-center gap-4 text-xs text-slate-500">
+                <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">↑↓</kbd> Navigate</span>
+                <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">↵</kbd> Select</span>
               </div>
             </motion.div>
           </motion.div>
