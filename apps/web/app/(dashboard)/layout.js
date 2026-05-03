@@ -39,20 +39,27 @@ export default function DashboardLayout({ children }) {
   const unreadCount = notifications.length;
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = React.useState(false);
+  const [hasCheckedAuth, setHasCheckedAuth] = React.useState(false);
 
   // Auth guard - fetch user on mount and redirect if not authenticated
   useEffect(() => {
     const checkAuth = async () => {
-      await fetchMe();
+      try {
+        await fetchMe();
+      } catch (error) {
+        // fetchMe doesn't throw, but just in case
+      } finally {
+        setHasCheckedAuth(true);
+      }
     };
     checkAuth();
   }, [fetchMe]);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (hasCheckedAuth && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [hasCheckedAuth, isAuthenticated, router]);
 
   useEffect(() => {
     initTheme();
@@ -100,7 +107,7 @@ export default function DashboardLayout({ children }) {
   }, [activeWorkspace, setOnlineMembers, addNotification]);
 
   // Show loading or redirecting state
-  if (isLoading || !isAuthenticated) {
+  if (!hasCheckedAuth || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-950">
         <div className="text-slate-400">Loading...</div>
