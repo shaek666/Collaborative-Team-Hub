@@ -1,23 +1,10 @@
 import { NextResponse } from 'next/server';
 
 export function middleware(request) {
-  const { pathname } = request.nextUrl;
-
-  const isPublicPath = pathname === '/login' || pathname === '/register';
-  const hasAuthToken = request.cookies.has('accessToken');
-
-  // If trying to access protected route without token, redirect to login
-  if (!isPublicPath && !hasAuthToken) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // If logged in user tries to access auth pages, redirect to dashboard
-  if (isPublicPath && hasAuthToken) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
+  // Auth checks are handled client-side via useAuthStore.fetchMe()
+  // because httpOnly cookies are set on the API domain (api-production-4177.up.railway.app)
+  // and aren't readable server-side on the web domain (web-production-bbe80.up.railway.app).
+  // The client-side layout.js fetchMe() call sends the cookie correctly via withCredentials: true.
   return NextResponse.next();
 }
 
