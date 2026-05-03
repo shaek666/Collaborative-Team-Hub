@@ -46,4 +46,4 @@ WORKDIR /app/apps/api
 EXPOSE 4000
 ENV PORT=4000
 
-CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma && node prisma/seed.js && node src/server.js"]
+CMD ["sh", "-c", "echo 'Running migrations...' && /app/node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma && echo 'Seeding database...' && node prisma/seed.js && echo 'Starting server...' && node src/server.js"]
