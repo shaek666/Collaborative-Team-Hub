@@ -29,7 +29,7 @@ import { getApiErrorMessage } from '../../../../../lib/errors';
 
 export default function GoalsPage() {
   const { id: workspaceId } = useParams();
-  const [goals, fetchGoals, fetchGoalUpdates, addGoalUpdate, addGoal, pendingIds, goalUpdates, addMilestone] = useGoalStore();
+  const { goals, fetchGoals, fetchGoalUpdates, addGoalUpdate, addGoal, pendingIds, goalUpdates, addMilestone } = useGoalStore();
   const [loading, setLoading] = useState(true);
   const [expandedGoalId, setExpandedGoalId] = useState(null);
   const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);

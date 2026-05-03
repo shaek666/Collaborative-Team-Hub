@@ -10,8 +10,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "turbo": "latest",
-    "prettier": "latest"
+    "@playwright/test": "^1.59.1",
+    "prettier": "latest",
+    "turbo": "latest"
   },
   "engines": {
     "node": ">=18"

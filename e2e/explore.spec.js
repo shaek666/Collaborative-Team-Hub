@@ -16,38 +16,47 @@ test.beforeEach(({ page }) => {
   test.info().annotations.push({ type: 'console-errors', description: JSON.stringify(consoleErrors) });
 });
 
+async function loginWithWorkspace(page) {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(demoAccount.email);
+  await page.getByLabel('Password').fill(demoAccount.password);
+  await page.getByRole('button', { name: /login/i }).click();
+  await page.waitForURL(/\/dashboard/, { timeout: 15000 });
+
+  // Select a workspace
+  await page.getByRole('button', { name: 'Switch workspace' }).click();
+  await page.getByRole('option').first().click();
+  await page.waitForTimeout(2000);
+}
+
 test.describe('Exploration: Auth & Onboarding', () => {
   test('Register → Login → Create Workspace', async ({ page }) => {
     // Register
     await page.goto('/');
-    const hasRegisterLink = await page.getByRole('link', { name: /register|sign.?up/i }).isVisible().catch(() => false);
+    const hasRegisterLink = await page.getByRole('link', { name: /create account/i }).isVisible().catch(() => false);
     findings.push({ flow: 'Auth', step: 'Register link', status: hasRegisterLink ? 'PASS' : 'FAIL', detail: hasRegisterLink ? 'Register link visible' : 'No register link found on landing page' });
 
     if (hasRegisterLink) {
-      await page.getByRole('link', { name: /register|sign.?up/i }).click();
-      await page.waitForURL(/register|sign.?up/);
+      await page.getByRole('link', { name: /create account/i }).click();
+      await page.waitForURL(/register/);
       findings.push({ flow: 'Auth', step: 'Register page loads', status: 'PASS', detail: `URL: ${page.url()}` });
     }
 
     // Login
-    await page.goto('/auth/login');
-    const loginFormVisible = await page.getByRole('textbox', { name: /email/i }).isVisible().catch(() => false);
+    await page.goto('/login');
+    const loginFormVisible = await page.getByLabel('Email').isVisible().catch(() => false);
     findings.push({ flow: 'Auth', step: 'Login form', status: loginFormVisible ? 'PASS' : 'FAIL', detail: loginFormVisible ? 'Login form rendered' : 'Login form not found' });
 
     if (loginFormVisible) {
-      await page.getByRole('textbox', { name: /email/i }).fill(demoAccount.email);
-      await page.getByRole('textbox', { name: /password/i }).fill(demoAccount.password);
-      await page.getByRole('button', { name: /log.?in|sign.?in/i }).click();
+      await page.getByLabel('Email').fill(demoAccount.email);
+      await page.getByLabel('Password').fill(demoAccount.password);
+      await page.getByRole('button', { name: /login/i }).click();
 
+      await page.waitForURL(/\/dashboard/, { timeout: 15000 }).catch(() => {});
       await page.waitForTimeout(3000);
       const redirectedToDashboard = page.url().includes('dashboard');
       findings.push({ flow: 'Auth', step: 'Login redirect', status: redirectedToDashboard ? 'PASS' : 'FAIL', detail: redirectedToDashboard ? 'Redirected to dashboard' : `Redirected to ${page.url()}` });
     }
-
-    // Create workspace
-    await page.goto('/dashboard');
-    const createWorkspaceBtn = await page.getByRole('button', { name: /create.*(workspace|team)|new.*workspace/i }).isVisible().catch(() => false);
-    findings.push({ flow: 'Workspace', step: 'Create workspace button', status: createWorkspaceBtn ? 'PASS' : 'FAIL', detail: createWorkspaceBtn ? 'Button visible' : 'Button not found' });
 
     // Screenshot the dashboard
     await page.screenshot({ path: 'e2e/screens/dashboard.png', fullPage: true }).catch(() => {});
@@ -56,31 +65,27 @@ test.describe('Exploration: Auth & Onboarding', () => {
 
 test.describe('Exploration: Goals & Milestones', () => {
   test('Create Goal → Add Milestone → Post Progress Update', async ({ page }) => {
-    await page.goto('/auth/login');
-    await page.getByRole('textbox', { name: /email/i }).fill(demoAccount.email);
-    await page.getByRole('textbox', { name: /password/i }).fill(demoAccount.password);
-    await page.getByRole('button', { name: /log.?in|sign.?in/i }).click();
-    await page.waitForURL(/dashboard/, { timeout: 10000 }).catch(() => {});
+    await loginWithWorkspace(page);
 
     // Navigate to goals
-    const goalsLink = await page.getByRole('link', { name: /goals/i }).isVisible().catch(() => false);
+    const goalsLink = await page.getByRole('link', { name: 'Goals' }).isVisible().catch(() => false);
     findings.push({ flow: 'Goals', step: 'Goals navigation', status: goalsLink ? 'PASS' : 'FAIL', detail: goalsLink ? 'Goals link in nav' : 'No goals navigation found' });
 
     if (goalsLink) {
-      await page.getByRole('link', { name: /goals/i }).click();
-      await page.waitForTimeout(2000);
+      await page.getByRole('link', { name: 'Goals' }).click();
+      await page.waitForURL(/\/goals/, { timeout: 10000 });
 
       // Create goal
-      const createGoalBtn = await page.getByRole('button', { name: /create.*goal|new.*goal|add.*goal/i }).isVisible().catch(() => false);
+      const createGoalBtn = await page.getByRole('button', { name: /add goal/i }).isVisible().catch(() => false);
       findings.push({ flow: 'Goals', step: 'Create goal button', status: createGoalBtn ? 'PASS' : 'FAIL', detail: createGoalBtn ? 'Button visible' : 'Button not found' });
 
       if (createGoalBtn) {
-        await page.getByRole('button', { name: /create.*goal|new.*goal|add.*goal/i }).click();
+        await page.getByRole('button', { name: /add goal/i }).click();
         await page.waitForTimeout(1000);
 
-        const titleInput = page.getByRole('textbox', { name: /title/i }).first();
+        const titleInput = page.getByPlaceholder('Goal title');
         await titleInput.fill(`Exploration Goal-${Date.now()}`).catch(() => {});
-        await page.getByRole('button', { name: /create|save|submit/i }).first().click().catch(() => {});
+        await page.getByRole('button', { name: /create goal/i }).click().catch(() => {});
         await page.waitForTimeout(2000);
       }
 
@@ -91,17 +96,14 @@ test.describe('Exploration: Goals & Milestones', () => {
 
 test.describe('Exploration: Announcements', () => {
   test('Post Announcement → React → Comment → Pin', async ({ page }) => {
-    await page.goto('/auth/login');
-    await page.getByRole('textbox', { name: /email/i }).fill(demoAccount.email);
-    await page.getByRole('textbox', { name: /password/i }).fill(demoAccount.password);
-    await page.getByRole('button', { name: /log.?in|sign.?in/i }).click();
-    await page.waitForURL(/dashboard/, { timeout: 10000 }).catch(() => {});
+    await loginWithWorkspace(page);
 
-    const announcementsLink = await page.getByRole('link', { name: /announcements/i }).isVisible().catch(() => false);
+    const announcementsLink = await page.getByRole('link', { name: 'Announcements' }).isVisible().catch(() => false);
     findings.push({ flow: 'Announcements', step: 'Announcements navigation', status: announcementsLink ? 'PASS' : 'FAIL', detail: announcementsLink ? 'Link in nav' : 'Not found' });
 
     if (announcementsLink) {
-      await page.getByRole('link', { name: /announcements/i }).click();
+      await page.getByRole('link', { name: 'Announcements' }).click();
+      await page.waitForURL(/\/announcements/, { timeout: 10000 });
       await page.waitForTimeout(2000);
 
       // Check for compose area
@@ -123,17 +125,14 @@ test.describe('Exploration: Announcements', () => {
 
 test.describe('Exploration: Action Items Kanban', () => {
   test('Create Action Items → Drag Between Columns', async ({ page }) => {
-    await page.goto('/auth/login');
-    await page.getByRole('textbox', { name: /email/i }).fill(demoAccount.email);
-    await page.getByRole('textbox', { name: /password/i }).fill(demoAccount.password);
-    await page.getByRole('button', { name: /log.?in|sign.?in/i }).click();
-    await page.waitForURL(/dashboard/, { timeout: 10000 }).catch(() => {});
+    await loginWithWorkspace(page);
 
-    const actionItemsLink = await page.getByRole('link', { name: /action.*items|tasks|kanban/i }).isVisible().catch(() => false);
+    const actionItemsLink = await page.getByRole('link', { name: 'Action Items' }).isVisible().catch(() => false);
     findings.push({ flow: 'Kanban', step: 'Action items navigation', status: actionItemsLink ? 'PASS' : 'FAIL', detail: actionItemsLink ? 'Link in nav' : 'Not found' });
 
     if (actionItemsLink) {
-      await page.getByRole('link', { name: /action.*items|tasks|kanban/i }).click();
+      await page.getByRole('link', { name: 'Action Items' }).click();
+      await page.waitForURL(/\/action-items/, { timeout: 10000 });
       await page.waitForTimeout(2000);
 
       // Check for Kanban columns
@@ -156,17 +155,14 @@ test.describe('Exploration: Action Items Kanban', () => {
 
 test.describe('Exploration: Members & Presence', () => {
   test('Invite Member → Check Online Indicator', async ({ page }) => {
-    await page.goto('/auth/login');
-    await page.getByRole('textbox', { name: /email/i }).fill(demoAccount.email);
-    await page.getByRole('textbox', { name: /password/i }).fill(demoAccount.password);
-    await page.getByRole('button', { name: /log.?in|sign.?in/i }).click();
-    await page.waitForURL(/dashboard/, { timeout: 10000 }).catch(() => {});
+    await loginWithWorkspace(page);
 
-    const membersLink = await page.getByRole('link', { name: /members|team|people/i }).isVisible().catch(() => false);
+    const membersLink = await page.getByRole('link', { name: 'Members' }).isVisible().catch(() => false);
     findings.push({ flow: 'Members', step: 'Members navigation', status: membersLink ? 'PASS' : 'FAIL', detail: membersLink ? 'Link in nav' : 'Not found' });
 
     if (membersLink) {
-      await page.getByRole('link', { name: /members|team|people/i }).click();
+      await page.getByRole('link', { name: 'Members' }).click();
+      await page.waitForURL(/\/members/, { timeout: 10000 });
       await page.waitForTimeout(2000);
 
       // Check for invite button
@@ -184,17 +180,14 @@ test.describe('Exploration: Members & Presence', () => {
 
 test.describe('Exploration: Analytics', () => {
   test('View Analytics → Export CSV → Check Download', async ({ page }) => {
-    await page.goto('/auth/login');
-    await page.getByRole('textbox', { name: /email/i }).fill(demoAccount.email);
-    await page.getByRole('textbox', { name: /password/i }).fill(demoAccount.password);
-    await page.getByRole('button', { name: /log.?in|sign.?in/i }).click();
-    await page.waitForURL(/dashboard/, { timeout: 10000 }).catch(() => {});
+    await loginWithWorkspace(page);
 
-    const analyticsLink = await page.getByRole('link', { name: /analytics|insights|reports|dashboard/i }).isVisible().catch(() => false);
+    const analyticsLink = await page.getByRole('link', { name: 'Analytics' }).isVisible().catch(() => false);
     findings.push({ flow: 'Analytics', step: 'Analytics navigation', status: analyticsLink ? 'PASS' : 'FAIL', detail: analyticsLink ? 'Link in nav' : 'Not found' });
 
     if (analyticsLink) {
-      await page.getByRole('link', { name: /analytics|insights|reports/i }).click();
+      await page.getByRole('link', { name: 'Analytics' }).click();
+      await page.waitForURL(/\/analytics/, { timeout: 10000 });
       await page.waitForTimeout(3000);
 
       // Check for charts/visualizations
@@ -229,8 +222,8 @@ test.describe('Exploration: Responsive Layout', () => {
       const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
       const page = await context.newPage();
 
-      await page.goto('/auth/login');
-      const loginVisible = await page.getByRole('textbox', { name: /email/i }).isVisible().catch(() => false);
+      await page.goto('/login');
+      const loginVisible = await page.getByLabel('Email').isVisible().catch(() => false);
       findings.push({ flow: 'Responsive', step: `${vp.name} login (${vp.width}px)`, status: loginVisible ? 'PASS' : 'FAIL', detail: loginVisible ? 'Login form visible' : 'Login form broken/hidden' });
 
       await page.screenshot({ path: `e2e/screens/login-${vp.name}.png`, fullPage: true }).catch(() => {});

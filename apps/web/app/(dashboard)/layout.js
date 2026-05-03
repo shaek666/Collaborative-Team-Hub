@@ -32,13 +32,27 @@ import toast from 'react-hot-toast';
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, isAuthenticated, isLoading, logout, fetchMe } = useAuthStore();
   const { workspaces, activeWorkspace, fetchWorkspaces, setActiveWorkspace, setOnlineMembers } = useWorkspaceStore();
   const { notifications, fetchNotifications, addNotification, markAllAsRead } = useNotificationStore();
   const { theme, initTheme, toggleTheme } = useThemeStore();
   const unreadCount = notifications.length;
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = React.useState(false);
+
+  // Auth guard - fetch user on mount and redirect if not authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      await fetchMe();
+    };
+    checkAuth();
+  }, [fetchMe]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   useEffect(() => {
     initTheme();
@@ -84,6 +98,15 @@ export default function DashboardLayout({ children }) {
       };
     }
   }, [activeWorkspace, setOnlineMembers, addNotification]);
+
+  // Show loading or redirecting state
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+        <div className="text-slate-400">Loading...</div>
+      </div>
+    );
+  }
 
   const navLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },

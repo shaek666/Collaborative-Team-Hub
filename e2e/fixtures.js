@@ -1,6 +1,6 @@
 export const demoAccount = {
-  email: process.env.DEMO_EMAIL || 'demo@example.com',
-  password: process.env.DEMO_PASSWORD || 'DemoPass123!',
+  email: process.env.DEMO_EMAIL || 'demo@teamhub.dev',
+  password: process.env.DEMO_PASSWORD || 'Demo1234!',
 };
 
-export const newMemberEmail = process.env.NEW_MEMBER_EMAIL || 'newmember@example.com';
+export const newMemberEmail = process.env.NEW_MEMBER_EMAIL || `newmember${Date.now()}@example.com`;
