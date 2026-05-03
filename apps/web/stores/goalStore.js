@@ -140,4 +140,22 @@ export const useGoalStore = create((set, get) => ({
       throw error;
     }
   },
+
+  addMilestone: async (workspaceId, goalId, milestoneData) => {
+    try {
+      const res = await api.post(`/workspaces/${workspaceId}/goals/${goalId}/milestones`, milestoneData);
+      set((state) => ({
+        goals: state.goals.map((g) => {
+          if (g.id === goalId) {
+            return { ...g, milestones: [...(g.milestones || []), res.data] };
+          }
+          return g;
+        }),
+      }));
+      return res.data;
+    } catch (error) {
+      toast.error('Failed to add milestone.');
+      throw error;
+    }
+  },
 }));
