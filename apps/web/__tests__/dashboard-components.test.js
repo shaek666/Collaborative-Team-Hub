@@ -202,6 +202,7 @@ describe('Goal card component', () => {
           _count: { milestones: 0 },
         },
       ],
+      goalUpdates: {},
       fetchGoals: jest.fn().mockResolvedValue(undefined),
       addGoal: jest.fn(),
       updateGoalStatus: jest.fn(),
@@ -234,6 +235,7 @@ describe('Announcement feed item', () => {
     useMockStore(useAuthStore, {
       user: { id: 'user-1', name: 'Nora', email: 'nora@example.com' },
     });
+    useMockStore(useWorkspaceStore, { members: [] });
     useMockStore(useAnnouncementStore, {
       announcements: [
         {
@@ -372,11 +374,14 @@ describe('Notification bell', () => {
     useRouter.mockReturnValue({ push: jest.fn() });
     useMockStore(useAuthStore, {
       user: { id: 'user-1', name: 'Nora', email: 'nora@example.com' },
+      isAuthenticated: true,
+      isLoading: false,
+      fetchMe: jest.fn().mockResolvedValue(undefined),
       logout: jest.fn(),
     });
     useMockStore(useWorkspaceStore, {
-      workspaces: [],
-      activeWorkspace: null,
+      workspaces: [{ id: 'ws-1', name: 'Test', accentColour: '#3b82f6' }],
+      activeWorkspace: { id: 'ws-1', name: 'Test', accentColour: '#3b82f6' },
       fetchWorkspaces: jest.fn().mockResolvedValue(undefined),
       setActiveWorkspace: jest.fn(),
       setOnlineMembers: jest.fn(),
@@ -388,6 +393,11 @@ describe('Notification bell', () => {
         <div>Dashboard content</div>
       </DashboardLayout>
     );
+
+    // Wait for auth check to complete
+    await waitFor(() => {
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    });
 
     expect(screen.getByRole('status', { name: '3 unread notifications' })).toHaveTextContent('3');
 

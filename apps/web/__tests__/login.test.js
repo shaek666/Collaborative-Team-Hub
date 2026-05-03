@@ -83,7 +83,10 @@ describe('Login form', () => {
     render(<LoginPage />);
     await user.click(screen.getByRole('button', { name: /login/i }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Email and password are required.');
+    const alerts = screen.getAllByRole('alert');
+    expect(alerts).toHaveLength(2);
+    expect(alerts[0]).toHaveTextContent('Email is required');
+    expect(alerts[1]).toHaveTextContent('Password is required');
     expect(mockLogin).not.toHaveBeenCalled();
   });
 
