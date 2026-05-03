@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node /app/apps/web/node_modules/next/dist/bin/next build",
+    "build": "node /app/node_modules/next/dist/bin/next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest --runInBand"
