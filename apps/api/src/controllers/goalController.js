@@ -21,6 +21,9 @@ export const listGoals = async (req, res, next) => {
         owner: {
           select: { name: true, avatarUrl: true }
         },
+        milestones: {
+          select: { id: true, title: true, completed: true, progressPercent: true }
+        },
         _count: {
           select: { milestones: true, actionItems: true }
         }
@@ -169,6 +172,30 @@ export const postUpdate = async (req, res, next) => {
     
     req.app.get('io').to(id).emit('goal:update_posted', { goalId, update });
     res.status(201).json(update);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUpdates = async (req, res, next) => {
+  try {
+    const { goalId, id } = req.params;
+    
+    // Verify goal isolation
+    const goal = await prisma.goal.findUnique({
+      where: { id: goalId, workspaceId: id }
+    });
+    if (!goal) return sendError(res, 404, 'Goal not found in this workspace');
+
+    const updates = await prisma.goalUpdate.findMany({
+      where: { goalId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: { select: { name: true, avatarUrl: true } }
+      }
+    });
+
+    res.json(updates);
   } catch (error) {
     next(error);
   }

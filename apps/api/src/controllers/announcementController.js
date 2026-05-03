@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma.js';
+import cloudinary from '../lib/cloudinary.js';
 import { sendError } from '../utils/httpResponses.js';
 
 export const listAnnouncements = async (req, res, next) => {
@@ -18,6 +19,7 @@ export const listAnnouncements = async (req, res, next) => {
       select: {
         id: true,
         content: true,
+        attachmentUrl: true,
         isPinned: true,
         createdAt: true,
         author: {
@@ -43,13 +45,14 @@ export const listAnnouncements = async (req, res, next) => {
 export const createAnnouncement = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { content, isPinned } = req.body;
+    const { content, isPinned, attachmentUrl } = req.body;
     const announcement = await prisma.announcement.create({
       data: {
         workspaceId: id,
         authorId: req.user.id,
         content,
-        isPinned: isPinned || false
+        isPinned: isPinned || false,
+        attachmentUrl: attachmentUrl || null,
       },
       include: {
         author: { select: { name: true, avatarUrl: true } }
@@ -162,6 +165,27 @@ export const addComment = async (req, res, next) => {
     
     req.app.get('io').to(id).emit('announcement:commented', { announcementId, comment });
     res.status(201).json(comment);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadAttachment = async (req, res, next) => {
+  try {
+    if (!req.file) return sendError(res, 400, 'No file uploaded');
+
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: 'attachments', resource_type: 'auto' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    res.json({ url: result.secure_url, publicId: result.public_id });
   } catch (error) {
     next(error);
   }

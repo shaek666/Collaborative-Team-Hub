@@ -17,9 +17,11 @@ import {
   ChevronRight,
   Loader2,
   Target,
-  Users
+  Users,
+  Send,
+  MessageSquare
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../../../../lib/utils';
 import toast from 'react-hot-toast';
@@ -27,12 +29,14 @@ import { getApiErrorMessage } from '../../../../../lib/errors';
 
 export default function GoalsPage() {
   const { id: workspaceId } = useParams();
-  const { goals, fetchGoals, addGoal, pendingIds } = useGoalStore();
+  const { goals, fetchGoals, fetchGoalUpdates, addGoalUpdate, addGoal, pendingIds, goalUpdates } = useGoalStore();
   const [loading, setLoading] = useState(true);
   const [expandedGoalId, setExpandedGoalId] = useState(null);
   const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [addingGoal, setAddingGoal] = useState(false);
+  const [updateContent, setUpdateContent] = useState('');
+  const [postingUpdate, setPostingUpdate] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -47,6 +51,12 @@ export default function GoalsPage() {
     load();
   }, [workspaceId, fetchGoals]);
 
+  useEffect(() => {
+    if (expandedGoalId) {
+      fetchGoalUpdates(workspaceId, expandedGoalId);
+    }
+  }, [expandedGoalId, workspaceId, fetchGoalUpdates]);
+
   const handleAddGoal = async (e) => {
     e.preventDefault();
     if (!newGoalTitle.trim()) return;
@@ -59,6 +69,20 @@ export default function GoalsPage() {
     } catch {
     } finally {
       setAddingGoal(false);
+    }
+  };
+
+  const handlePostUpdate = async (e) => {
+    e.preventDefault();
+    if (!updateContent.trim() || !expandedGoalId) return;
+
+    setPostingUpdate(true);
+    try {
+      await addGoalUpdate(workspaceId, expandedGoalId, updateContent.trim());
+      setUpdateContent('');
+    } catch {
+    } finally {
+      setPostingUpdate(false);
     }
   };
 
@@ -136,6 +160,7 @@ export default function GoalsPage() {
           <AnimatePresence mode="popLayout">
             {goals.map((goal) => {
               const milestoneProgress = getMilestoneProgress(goal);
+              const updates = goalUpdates[goal.id] || [];
 
               return (
                 <motion.div
@@ -226,7 +251,7 @@ export default function GoalsPage() {
                                       type="checkbox" 
                                       checked={milestone.completed} 
                                       className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-600 focus:ring-offset-slate-900"
-                                      onChange={() => {}} // Handle milestone toggle
+                                      onChange={() => {}}
                                     />
                                     <span className={cn("text-sm", milestone.completed && "line-through text-slate-500")}>
                                       {milestone.title}
@@ -241,15 +266,52 @@ export default function GoalsPage() {
                             </div>
                             
                             <div className="space-y-4">
-                              <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Activity</h4>
-                              <div className="space-y-4">
-                                <div className="flex gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-slate-800 flex-shrink-0" />
-                                  <div className="flex-1 bg-slate-800/30 rounded-lg p-3 text-sm">
-                                    <p className="text-slate-300">Started working on the marketing assets for the social rollout.</p>
-                                    <p className="text-[10px] text-slate-500 mt-1 uppercase font-semibold">2 hours ago</p>
+                              <h4 className="text-sm font-bold uppercase tracking-widest text-slate-500">Activity Feed</h4>
+                              
+                              <form onSubmit={handlePostUpdate} className="flex gap-2">
+                                <Input
+                                  value={updateContent}
+                                  onChange={(e) => setUpdateContent(e.target.value)}
+                                  placeholder="Post an update..."
+                                  className="bg-slate-950/50 border-slate-800 text-sm"
+                                  disabled={postingUpdate}
+                                />
+                                <Button type="submit" size="sm" disabled={postingUpdate || !updateContent.trim()}>
+                                  {postingUpdate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                </Button>
+                              </form>
+
+                              <div className="space-y-3 max-h-64 overflow-y-auto">
+                                {updates.length === 0 ? (
+                                  <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+                                    <MessageSquare className="w-4 h-4" />
+                                    No updates yet. Be the first to post one!
                                   </div>
-                                </div>
+                                ) : (
+                                  updates.map((update) => (
+                                    <div key={update.id} className="flex gap-3">
+                                      <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex-shrink-0 overflow-hidden">
+                                        {update.author?.avatarUrl ? (
+                                          <img src={update.author.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                          <div className="w-full h-full flex items-center justify-center text-xs font-bold uppercase">
+                                            {update.author?.name?.charAt(0)}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex-1 bg-slate-800/30 rounded-lg p-3">
+                                        <p className="text-sm text-slate-200">{update.content}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-xs text-slate-500 font-medium">{update.author?.name}</span>
+                                          <span className="text-xs text-slate-600">•</span>
+                                          <span className="text-xs text-slate-500">
+                                            {formatDistanceToNow(new Date(update.createdAt), { addSuffix: true })}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))
+                                )}
                               </div>
                             </div>
                           </div>

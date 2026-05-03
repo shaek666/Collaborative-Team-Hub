@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useWorkspaceStore } from '../../../stores/workspaceStore';
+import { useAuthStore } from '../../../stores/authStore';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
 import { StatCard } from '../../../components/ui/StatCard';
 import { LoadingState } from '../../../components/ui/LoadingState';
@@ -30,6 +31,7 @@ import { getApiErrorMessage } from '../../../lib/errors';
 
 export default function DashboardPage() {
   const { activeWorkspace } = useWorkspaceStore();
+  const { user } = useAuthStore();
   const [stats, setStats] = useState({
     totalGoals: 0,
     completedThisWeek: 0,
@@ -89,9 +91,9 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <header>
         <h1 className="text-3xl font-bold tracking-tight mb-2">
-          Welcome back, {activeWorkspace.name}
+          Welcome back, {user?.name?.split(' ')[0] || 'there'}
         </h1>
-        <p className="text-slate-400">Here is what is happening in your team today.</p>
+        <p className="text-slate-400">Here&apos;s what&apos;s happening in {activeWorkspace.name} today.</p>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

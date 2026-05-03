@@ -1,8 +1,11 @@
 import express from 'express';
+import multer from 'multer';
 import { authenticate } from '../middleware/authenticate.js';
 import { rbac } from '../middleware/rbac.js';
 import { PERMISSIONS } from 'shared';
 import * as announcementController from '../controllers/announcementController.js';
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 const router = express.Router({ mergeParams: true });
 
@@ -185,5 +188,45 @@ router.post('/:announcementId/reactions', rbac(PERMISSIONS.REACTIONS_CREATE), an
  *         description: Comment added
  */
 router.post('/:announcementId/comments', rbac(PERMISSIONS.COMMENTS_CREATE), announcementController.addComment);
+
+/**
+ * @openapi
+ * /workspaces/{id}/attachments:
+ *   post:
+ *     tags: [Announcements]
+ *     summary: Upload attachment
+ *     description: Uploads a file (image, PDF, text) to Cloudinary for use in announcements.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: File uploaded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                 publicId:
+ *                   type: string
+ */
+router.post('/attachments', authenticate, upload.single('file'), announcementController.uploadAttachment);
 
 export default router;

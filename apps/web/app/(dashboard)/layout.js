@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '../../stores/authStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useNotificationStore } from '../../stores/notificationStore';
+import { useThemeStore } from '../../stores/themeStore';
 import { getSocket } from '../../lib/socket';
 import { 
   LayoutDashboard, 
@@ -19,7 +20,9 @@ import {
   Plus,
   ChevronDown,
   Menu,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../../components/ui/Button';
@@ -32,9 +35,14 @@ export default function DashboardLayout({ children }) {
   const { user, logout } = useAuthStore();
   const { workspaces, activeWorkspace, fetchWorkspaces, setActiveWorkspace, setOnlineMembers } = useWorkspaceStore();
   const { notifications, fetchNotifications, addNotification, markAllAsRead } = useNotificationStore();
+  const { theme, initTheme, toggleTheme } = useThemeStore();
   const unreadCount = notifications.length;
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = React.useState(false);
+
+  useEffect(() => {
+    initTheme();
+  }, [initTheme]);
 
   useEffect(() => {
     const loadShellData = async () => {
@@ -208,8 +216,8 @@ export default function DashboardLayout({ children }) {
         </nav>
 
         {/* User Footer */}
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center justify-between mb-4 px-2">
+        <div className="p-4 border-t border-slate-800 space-y-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -230,13 +238,23 @@ export default function DashboardLayout({ children }) {
                 )}
               </button>
             </div>
-            <button 
-              onClick={handleLogout}
-              className="text-slate-400 hover:text-rose-500 transition-colors"
-              aria-label="Log out"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4 text-slate-400" /> : <Moon className="w-4 h-4 text-slate-400" />}
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors"
+                aria-label="Log out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           
           <Link href="/profile" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800 transition-all group">

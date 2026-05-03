@@ -246,4 +246,30 @@ router.patch('/:goalId/milestones/:milestoneId', rbac(PERMISSIONS.GOALS_CREATE),
  */
 router.post('/:goalId/updates', rbac(PERMISSIONS.GOALS_CREATE), goalController.postUpdate);
 
+/**
+ * @openapi
+ * /workspaces/{id}/goals/{goalId}/updates:
+ *   get:
+ *     tags: [Goals]
+ *     summary: List goal updates
+ *     description: Returns the activity feed for a specific goal.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: goalId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of goal updates
+ */
+router.get('/:goalId/updates', rbac(PERMISSIONS.WORKSPACE_VIEW), goalController.getUpdates);
+
 export default router;

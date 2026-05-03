@@ -49,9 +49,11 @@ export default function MembersPage() {
     if (!inviteEmail) return;
     setInviting(true);
     try {
-      await api.post(`/workspaces/${workspaceId}/invite`, { email: inviteEmail });
+      await api.post(`/workspaces/${workspaceId}/invite`, { email: inviteEmail, role: 'MEMBER' });
       toast.success('Invitation sent!');
       setInviteEmail('');
+      // Reload workspace data to get updated member list
+      await fetchWorkspaces();
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to send invite'));
     } finally {

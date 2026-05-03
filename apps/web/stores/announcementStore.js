@@ -22,9 +22,9 @@ export const useAnnouncementStore = create((set, get) => ({
     }
   },
 
-  addAnnouncement: async (workspaceId, content) => {
+  addAnnouncement: async (workspaceId, content, attachmentUrl = null) => {
     try {
-      const res = await api.post(`/workspaces/${workspaceId}/announcements`, { content });
+      const res = await api.post(`/workspaces/${workspaceId}/announcements`, { content, attachmentUrl });
       set((state) => ({ announcements: [res.data, ...state.announcements] }));
     } catch (error) {
       toast.error('Failed to post announcement.');

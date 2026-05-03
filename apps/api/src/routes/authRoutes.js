@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, logout, me } from '../controllers/authController.js';
+import { register, login, logout, me, refresh } from '../controllers/authController.js';
 import { authenticate } from '../middleware/authenticate.js';
 
 const router = express.Router();
@@ -95,6 +95,21 @@ router.post('/login', login);
  *         description: Internal server error
  */
 router.post('/logout', logout);
+
+/**
+ * @openapi
+ * /auth/refresh:
+ *   post:
+ *     tags: [Authentication]
+ *     summary: Refresh access token
+ *     description: Rotates refresh token and issues a new access + refresh token pair.
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *       401:
+ *         description: Invalid or missing refresh token
+ */
+router.post('/refresh', refresh);
 
 /**
  * @openapi

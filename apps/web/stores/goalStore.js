@@ -5,6 +5,7 @@ import { addPendingId, removePendingId } from './optimistic';
 
 export const useGoalStore = create((set, get) => ({
   goals: [],
+  goalUpdates: {}, // Map<goalId, updates[]>
   nextCursor: null,
   pendingIds: new Set(),
 
@@ -18,6 +19,33 @@ export const useGoalStore = create((set, get) => ({
         nextCursor: res.data.nextCursor,
       }));
     } catch (error) {
+      throw error;
+    }
+  },
+
+  fetchGoalUpdates: async (workspaceId, goalId) => {
+    try {
+      const res = await api.get(`/workspaces/${workspaceId}/goals/${goalId}/updates`);
+      set((state) => ({
+        goalUpdates: { ...state.goalUpdates, [goalId]: res.data },
+      }));
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  addGoalUpdate: async (workspaceId, goalId, content) => {
+    try {
+      const res = await api.post(`/workspaces/${workspaceId}/goals/${goalId}/updates`, { content });
+      set((state) => {
+        const existing = state.goalUpdates[goalId] || [];
+        return {
+          goalUpdates: { ...state.goalUpdates, [goalId]: [res.data, ...existing] },
+        };
+      });
+      return res.data;
+    } catch (error) {
+      toast.error('Failed to post update.');
       throw error;
     }
   },

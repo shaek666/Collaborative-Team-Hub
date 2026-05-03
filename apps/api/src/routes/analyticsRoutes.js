@@ -107,4 +107,35 @@ router.patch('/notifications/read-all', analyticsController.markAllAsRead);
  */
 router.patch('/notifications/:id/read', analyticsController.markAsRead);
 
+/**
+ * @openapi
+ * /notifications:
+ *   post:
+ *     tags: [Notifications]
+ *     summary: Create notification
+ *     description: Creates an in-app notification (used for @mentions).
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [userId, type, message]
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               workspaceId:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Notification created
+ */
+router.post('/notifications', analyticsController.createNotification);
+
 export default router;

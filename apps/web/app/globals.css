@@ -40,3 +40,32 @@
     }
   }
 }
+
+/* Light theme overrides */
+html.light body {
+  @apply bg-white text-slate-900;
+}
+
+html.light .bg-slate-950 {
+  @apply bg-slate-50;
+}
+
+html.light .bg-slate-900\/50 {
+  @apply bg-white/80;
+}
+
+html.light .border-slate-800 {
+  @apply border-slate-200;
+}
+
+html.light .text-slate-100 {
+  @apply text-slate-900;
+}
+
+html.light .text-slate-400 {
+  @apply text-slate-500;
+}
+
+html.light .text-slate-500 {
+  @apply text-slate-400;
+}

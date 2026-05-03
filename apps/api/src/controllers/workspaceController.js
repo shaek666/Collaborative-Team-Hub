@@ -1,5 +1,6 @@
 import prisma from '../lib/prisma.js';
 import { sendError } from '../utils/httpResponses.js';
+import { sendWorkspaceInviteEmail } from '../lib/email.js';
 
 export const listWorkspaces = async (req, res, next) => {
   try {
@@ -94,9 +95,14 @@ export const inviteMember = async (req, res, next) => {
     
     const user = await prisma.user.findUnique({ 
       where: { email },
-      select: { id: true } 
+      select: { id: true, name: true, email: true } 
     });
     if (!user) return sendError(res, 404, 'User with this email not found');
+
+    const workspace = await prisma.workspace.findUnique({
+      where: { id },
+      select: { name: true }
+    });
 
     // Use transaction to create member and potentially a notification
     const [member] = await prisma.$transaction([
@@ -118,17 +124,20 @@ export const inviteMember = async (req, res, next) => {
           userId: user.id,
           workspaceId: id,
           type: 'WORKSPACE_INVITE',
-          message: `You have been invited to join the workspace.`
+          message: `You have been invited to join ${workspace.name}.`
         }
       })
     ]);
 
-    // Notify the user about the new invite
+    // Send email invitation
+    await sendWorkspaceInviteEmail(user.email, workspace.name, req.user.name);
+
+    // Notify the user about the new invite via Socket.io
     req.app.get('io').sockets.sockets.forEach((socket) => {
       if (socket.user?.userId === user.id) {
         socket.emit('notification:new', {
           type: 'WORKSPACE_INVITE',
-          message: `You have been invited to join the workspace.`
+          message: `You have been invited to join ${workspace.name}.`
         });
       }
     });
