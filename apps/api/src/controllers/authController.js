@@ -79,6 +79,21 @@ export const register = async (req, res, next) => {
       },
     });
 
+    // Create default workspace for new user
+    await prisma.workspace.create({
+      data: {
+        name: `${name}'s Workspace`,
+        description: 'Your personal workspace',
+        accentColour: '#3b82f6',
+        members: {
+          create: {
+            userId: user.id,
+            role: 'ADMIN',
+          },
+        },
+      },
+    });
+
     const accessToken = generateAccessToken(user.id);
     const refreshToken = generateRefreshToken(user.id);
 
