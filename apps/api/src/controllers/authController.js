@@ -183,8 +183,16 @@ export const logout = async (req, res, next) => {
       }
     }
 
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    const cookieOpts = {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+      expires: new Date(0),
+    };
+
+    res.cookie('accessToken', '', cookieOpts);
+    res.cookie('refreshToken', '', cookieOpts);
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     next(error);
