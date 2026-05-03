@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent } from './Card';
 import { cn } from '../../lib/utils';
 
-export const StatCard = ({ label, value, icon: Icon, iconClassName, iconBgClassName, valueClassName }) => (
+export const StatCard = memo(({ label, value, icon: Icon, iconClassName, iconBgClassName, valueClassName }) => (
   <Card className="border-slate-800/50">
     <CardContent className="pt-6">
       <div className="flex items-center justify-between gap-4">
@@ -18,4 +18,6 @@ export const StatCard = ({ label, value, icon: Icon, iconClassName, iconBgClassN
       </div>
     </CardContent>
   </Card>
-);
+));
+
+StatCard.displayName = 'StatCard';

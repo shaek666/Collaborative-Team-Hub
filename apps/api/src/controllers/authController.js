@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import prisma from '../lib/prisma.js';
 import { sendError } from '../utils/httpResponses.js';
 
@@ -127,7 +126,7 @@ export const login = async (req, res, next) => {
   }
 };
 
-export const refresh = async (req, res, next) => {
+export const refresh = async (req, res, _next) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 

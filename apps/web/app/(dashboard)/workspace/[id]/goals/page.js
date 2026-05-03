@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useGoalStore } from '../../../../../stores/goalStore';
 import { Card, CardContent } from '../../../../../components/ui/Card';
@@ -107,22 +107,22 @@ export default function GoalsPage() {
     }
   };
 
-  const getStatusVariant = (status) => {
+  const getStatusVariant = useCallback((status) => {
     switch (status) {
       case 'COMPLETED': return 'success';
       case 'IN_PROGRESS': return 'info';
       case 'OVERDUE': return 'danger';
       default: return 'secondary';
     }
-  };
+  }, []);
 
-  const getMilestoneProgress = (goal) => {
+  const getMilestoneProgress = useCallback((goal) => {
     const totalMilestones = goal._count?.milestones || goal.milestones?.length || 0;
     if (totalMilestones === 0) return 0;
 
     const completedMilestones = goal.milestones?.filter((milestone) => milestone.completed).length || 0;
     return Math.round((completedMilestones / totalMilestones) * 100);
-  };
+  }, []);
 
   return (
     <div className="space-y-8">

@@ -8,6 +8,7 @@ import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { getSocket } from '../../lib/socket';
+import { CommandPalette } from '../../components/ui/CommandPalette';
 import { 
   LayoutDashboard, 
   Target, 
@@ -330,6 +331,9 @@ export default function DashboardLayout({ children }) {
           {children}
         </div>
       </main>
+
+      {/* Global Command Palette */}
+      <CommandPalette />
     </div>
   );
 }

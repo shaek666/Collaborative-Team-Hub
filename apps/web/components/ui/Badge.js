@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { cn } from '../../lib/utils';
 
-export const Badge = ({ className, variant = 'default', ...props }) => {
+export const Badge = memo(({ className, variant = 'default', ...props }) => {
   const variants = {
     default: 'border-transparent bg-slate-800 text-slate-100',
     secondary: 'border-transparent bg-slate-700 text-slate-300',
@@ -21,4 +21,6 @@ export const Badge = ({ className, variant = 'default', ...props }) => {
       {...props}
     />
   );
-};
+});
+
+Badge.displayName = 'Badge';

@@ -4,17 +4,23 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-# 1. Dependencies stage
-FROM base AS deps
+# 1. Production dependencies stage
+FROM base AS prod-deps
 WORKDIR /app
-# Copy only package files to install dependencies
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
-# Install all dependencies including devDependencies for build
+RUN npm ci --omit=dev
+
+# 2. Full dependencies stage (for Prisma generation)
+FROM base AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
 RUN npm ci
 
-# 2. Build stage
+# 3. Build stage
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -23,7 +29,7 @@ COPY . .
 WORKDIR /app/apps/api
 RUN npx prisma generate
 
-# 3. Runner stage
+# 4. Runner stage
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -31,8 +37,9 @@ ENV NODE_ENV=production
 # Install required system dependencies for Prisma
 RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 && rm -rf /var/lib/apt/lists/*
 
-# Copy built files and necessary production dependencies
-COPY --from=builder /app/node_modules ./node_modules
+# Copy production dependencies and built files
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/apps/api ./apps/api
 COPY --from=builder /app/packages/shared ./packages/shared
 COPY --from=builder /app/package.json ./package.json

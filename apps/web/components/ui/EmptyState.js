@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent } from './Card';
 
-export const EmptyState = ({ icon: Icon, title, description, action }) => (
+export const EmptyState = memo(({ icon: Icon, title, description, action }) => (
   <Card className="border-slate-800/50 bg-slate-900/30" role="status" aria-live="polite">
     <CardContent className="p-8 text-center">
       {Icon && (
@@ -15,4 +15,6 @@ export const EmptyState = ({ icon: Icon, title, description, action }) => (
       <span className="sr-only">{title}</span>
     </CardContent>
   </Card>
-);
+));
+
+EmptyState.displayName = 'EmptyState';

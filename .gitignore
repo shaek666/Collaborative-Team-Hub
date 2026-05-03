@@ -23,6 +23,7 @@ playwright/.cache/
 
 # E2E screenshots
 e2e/screens/
+e2e/exploration-findings.md
 
 # Environment files
 .env

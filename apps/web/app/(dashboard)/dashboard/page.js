@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useWorkspaceStore } from '../../../stores/workspaceStore';
 import { useAuthStore } from '../../../stores/authStore';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card';
@@ -53,7 +53,7 @@ export default function DashboardPage() {
     }
   }, [activeWorkspace]);
 
-  const statCards = [
+  const statCards = useMemo(() => [
     { 
       label: 'Total Goals', 
       value: stats.totalGoals, 
@@ -75,7 +75,7 @@ export default function DashboardPage() {
       color: 'text-rose-500', 
       bg: 'bg-rose-500/10' 
     }
-  ];
+  ], [stats.totalGoals, stats.completedThisWeek, stats.overdueCount]);
 
   if (!activeWorkspace) {
     return (
