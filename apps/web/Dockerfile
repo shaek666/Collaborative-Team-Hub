@@ -37,7 +37,6 @@ RUN useradd --system --uid 1001 nextjs
 USER nextjs
 
 # Copy standalone output and static files
-COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 
