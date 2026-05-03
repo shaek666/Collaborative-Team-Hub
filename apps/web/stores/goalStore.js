@@ -158,4 +158,36 @@ export const useGoalStore = create((set, get) => ({
       throw error;
     }
   },
+
+  toggleMilestone: async (workspaceId, goalId, milestoneId) => {
+    const originalGoals = get().goals;
+    // Optimistic update
+    set((state) => ({
+      goals: state.goals.map((g) => {
+        if (g.id === goalId) {
+          return {
+            ...g,
+            milestones: g.milestones?.map((m) =>
+              m.id === milestoneId ? { ...m, completed: !m.completed } : m
+            ),
+          };
+        }
+        return g;
+      }),
+    }));
+
+    try {
+      const milestone = originalGoals
+        .find((g) => g.id === goalId)?.milestones?.find((m) => m.id === milestoneId);
+      const completed = !milestone?.completed;
+      await api.patch(
+        `/workspaces/${workspaceId}/goals/${goalId}/milestones/${milestoneId}`,
+        { completed }
+      );
+    } catch (error) {
+      // Rollback
+      set({ goals: originalGoals });
+      toast.error('Failed to update milestone.');
+    }
+  },
 }));

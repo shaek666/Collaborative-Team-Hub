@@ -29,7 +29,7 @@ import { getApiErrorMessage } from '../../../../../lib/errors';
 
 export default function GoalsPage() {
   const { id: workspaceId } = useParams();
-  const { goals, fetchGoals, fetchGoalUpdates, addGoalUpdate, addGoal, pendingIds, goalUpdates, addMilestone } = useGoalStore();
+  const { goals, fetchGoals, fetchGoalUpdates, addGoalUpdate, addGoal, pendingIds, goalUpdates, addMilestone, toggleMilestone } = useGoalStore();
   const [loading, setLoading] = useState(true);
   const [expandedGoalId, setExpandedGoalId] = useState(null);
   const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
@@ -294,7 +294,7 @@ export default function GoalsPage() {
                                       type="checkbox" 
                                       checked={milestone.completed} 
                                       className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-600 focus:ring-offset-slate-900"
-                                      onChange={() => {}}
+                                      onChange={() => toggleMilestone(workspaceId, goal.id, milestone.id)}
                                     />
                                     <span className={cn("text-sm", milestone.completed && "line-through text-slate-500")}>
                                       {milestone.title}
