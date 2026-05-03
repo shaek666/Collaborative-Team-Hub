@@ -19,14 +19,18 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Generate Prisma client
+# Generate Prisma client for OpenSSL 3.0
 WORKDIR /app/apps/api
+ENV PRISMA_CLIENT_BINARY_TARGETS=debian-openssl-3.0.x
 RUN npx prisma generate
 
 # 3. Runner stage
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+
+# Install required system dependencies for Prisma
+RUN apt-get update && apt-get install -y --no-install-recommends openssl libssl3 && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN groupadd --system --gid 1001 nodejs
