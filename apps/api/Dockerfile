@@ -19,9 +19,8 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Generate Prisma client for OpenSSL 3.0
+# Generate Prisma client
 WORKDIR /app/apps/api
-ENV PRISMA_CLIENT_BINARY_TARGETS=debian-openssl-3.0.x
 RUN npx prisma generate
 
 # 3. Runner stage
