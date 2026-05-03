@@ -117,6 +117,8 @@ export function CommandPalette() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}
               className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden"
+              role="dialog"
+              aria-label="Search commands"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-800">

@@ -226,4 +226,63 @@ test.describe('Collaborative Team Hub E2E', () => {
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
+
+  test('13. Dark/light theme toggle', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(demoAccount.email);
+    await page.getByLabel('Password').fill(demoAccount.password);
+    await page.getByRole('button', { name: /login/i }).click();
+    await page.waitForURL(/\/dashboard/);
+
+    // Check theme toggle button exists
+    const themeToggle = page.getByRole('button', { name: /switch to .* mode/i });
+    await expect(themeToggle).toBeVisible({ timeout: 15000 });
+
+    // Toggle theme
+    await themeToggle.click();
+    await page.waitForTimeout(500);
+
+    // Toggle back
+    await themeToggle.click();
+    await page.waitForTimeout(500);
+  });
+
+  test('14. Command palette with keyboard shortcut', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(demoAccount.email);
+    await page.getByLabel('Password').fill(demoAccount.password);
+    await page.getByRole('button', { name: /login/i }).click();
+    await page.waitForURL(/\/dashboard/);
+
+    // Open command palette with keyboard shortcut
+    await page.keyboard.press('Control+k');
+    await page.waitForTimeout(500);
+
+    // Verify command palette is visible
+    await expect(page.getByRole('dialog', { name: /search commands/i })).toBeVisible({ timeout: 10000 });
+
+    // Type to filter
+    await page.getByRole('textbox', { name: /search commands/i }).fill('Goal');
+    await expect(page.getByText('Goals')).toBeVisible({ timeout: 5000 });
+
+    // Close with Escape
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: /search commands/i })).not.toBeVisible({ timeout: 5000 });
+  });
+
+  test('15. PWA manifest and service worker', async ({ page }) => {
+    // Check manifest is accessible
+    await page.goto('/manifest.json');
+    await expect(page.getByText(/TeamHub/)).toBeVisible({ timeout: 10000 });
+
+    // Check PWA meta tags on homepage
+    await page.goto('/');
+    const hasManifest = await page.locator('link[rel="manifest"]').isVisible().catch(() => false);
+    await expect(hasManifest).toBeTruthy();
+  });
+
+  test('16. OpenAPI/Swagger documentation', async ({ page }) => {
+    await page.goto('/api/docs');
+    await expect(page.getByText(/Swagger UI|API Documentation|OpenAPI/i)).toBeVisible({ timeout: 15000 });
+  });
 });
