@@ -44,6 +44,11 @@ export default function DashboardLayout({ children }) {
 
   // Auth guard - fetch user on mount and redirect if not authenticated
   useEffect(() => {
+    // Don't overwrite state if we already have a user (e.g., just logged in)
+    if (user) {
+      setHasCheckedAuth(true);
+      return;
+    }
     const checkAuth = async () => {
       try {
         await fetchMe();
@@ -54,7 +59,7 @@ export default function DashboardLayout({ children }) {
       }
     };
     checkAuth();
-  }, [fetchMe]);
+  }, [fetchMe, user]);
 
   useEffect(() => {
     if (hasCheckedAuth && !isAuthenticated) {
