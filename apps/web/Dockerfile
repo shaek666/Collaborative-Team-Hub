@@ -18,6 +18,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ENV PATH="/app/node_modules/.bin:$PATH"
 
 # Build arguments for public env vars
 ARG NEXT_PUBLIC_API_URL
