@@ -140,53 +140,53 @@ export default function MembersPage() {
                       m.user?.email?.toLowerCase().includes(searchQuery.toLowerCase())
                     )
                     .map((member) => {
-                    const isOnline = onlineMembers.includes(member.userId);
+                    const isOnline = onlineMembers.includes(member.user.id);
                     return (
-                      <div key={member.userId} className="flex items-center justify-between p-4 hover:bg-slate-800/30 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden">
-                              {member.user?.avatarUrl ? (
-                                <img src={member.user.avatarUrl} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-xs font-bold uppercase">
-                                  {member.user?.name?.charAt(0)}
-                                </div>
-                              )}
-                            </div>
-                            <div className={cn(
-                              "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-slate-900",
-                              isOnline ? "bg-emerald-500" : "bg-slate-600"
-                            )} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold">{member.user?.name}</p>
-                            <p className="text-xs text-slate-500">{member.user?.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Badge variant={member.role === 'ADMIN' ? 'info' : 'secondary'} className="gap-1.5">
-                            {member.role === 'ADMIN' ? <ShieldCheck className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
-                            {member.role}
-                          </Badge>
-                          <div className="relative">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Options for ${member.user?.name}`} onClick={(e) => { e.stopPropagation(); if (member.role !== 'ADMIN') { setOpenMemberMenu(openMemberMenu === member.userId ? null : member.userId); } }} disabled={member.role === 'ADMIN'}>
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                            {openMemberMenu === member.userId && member.role !== 'ADMIN' && (
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveMember(member.userId, member.user?.name)}
-                                  className="w-full text-left px-3 py-2 text-sm text-rose-400 hover:bg-slate-800 transition-colors"
-                                >
-                                  Remove member
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                       <div key={member.user.id} className="flex items-center justify-between p-4 hover:bg-slate-800/30 transition-colors">
+                         <div className="flex items-center gap-4">
+                           <div className="relative">
+                             <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden">
+                               {member.user?.avatarUrl ? (
+                                 <img src={member.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                               ) : (
+                                 <div className="w-full h-full flex items-center justify-center text-xs font-bold uppercase">
+                                   {member.user?.name?.charAt(0)}
+                                 </div>
+                               )}
+                             </div>
+                             <div className={cn(
+                               "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-slate-900",
+                               isOnline ? "bg-emerald-500" : "bg-slate-600"
+                             )} />
+                           </div>
+                           <div>
+                             <p className="text-sm font-semibold">{member.user?.name}</p>
+                             <p className="text-xs text-slate-500">{member.user?.email}</p>
+                           </div>
+                         </div>
+                         <div className="flex items-center gap-4">
+                           <Badge variant={member.role === 'ADMIN' ? 'info' : 'secondary'} className="gap-1.5">
+                             {member.role === 'ADMIN' ? <ShieldCheck className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
+                             {member.role}
+                           </Badge>
+                           <div className="relative">
+                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Options for ${member.user?.name}`} onClick={(e) => { e.stopPropagation(); if (member.role !== 'ADMIN') { setOpenMemberMenu(openMemberMenu === member.user.id ? null : member.user.id); } }} disabled={member.role === 'ADMIN'}>
+                               <MoreVertical className="w-4 h-4" />
+                             </Button>
+                             {openMemberMenu === member.user.id && member.role !== 'ADMIN' && (
+                               <div className="absolute right-0 top-full mt-1 w-48 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
+                                 <button
+                                   type="button"
+                                   onClick={() => handleRemoveMember(member.user.id, member.user?.name)}
+                                   className="w-full text-left px-3 py-2 text-sm text-rose-400 hover:bg-slate-800 transition-colors"
+                                 >
+                                   Remove member
+                                 </button>
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                       </div>
                     );
                   })
                 )}
