@@ -90,7 +90,8 @@ export default function AnnouncementsPage() {
       setNewAnnouncement('');
       setAttachmentFile(null);
       setAttachmentUrl(null);
-    } catch {
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to post announcement'));
     }
   };
 
@@ -330,9 +331,17 @@ export default function AnnouncementsPage() {
                  mentionQuery={mentionQuery}
                  mentionPosition={mentionPosition}
                  onMentionSelect={(name) => handleMentionSelect(name, { current: commentInputRefs.current[announcement.id] })}
-                 index={i}
-                 onDelete={handleDeleteAnnouncement}
-               />
+                  index={i}
+                  onDelete={async (announcementId) => {
+                    if (!confirm('Delete this announcement?')) return;
+                    try {
+                      await api.delete(`/workspaces/${workspaceId}/announcements/${announcementId}`);
+                      await fetchAnnouncements(workspaceId);
+                    } catch (error) {
+                      toast.error(getApiErrorMessage(error, 'Failed to delete announcement'));
+                    }
+                  }}
+                />
              ))}
           </AnimatePresence>
         </div>
