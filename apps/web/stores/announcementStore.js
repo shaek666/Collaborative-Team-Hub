@@ -32,6 +32,12 @@ export const useAnnouncementStore = create((set, get) => ({
     }
   },
 
+  prependAnnouncement: (announcement) => {
+    set((state) => ({
+      announcements: [announcement, ...state.announcements]
+    }));
+  },
+
   addReaction: async (workspaceId, announcementId, emoji, userId) => {
     const originalAnnouncements = get().announcements;
     
@@ -39,10 +45,11 @@ export const useAnnouncementStore = create((set, get) => ({
     set((state) => ({
       announcements: state.announcements.map((a) => {
         if (a.id === announcementId) {
-          const exists = a.reactions.find((r) => r.emoji === emoji && r.userId === userId);
+          const reactions = a.reactions || [];
+          const exists = reactions.find((r) => r.emoji === emoji && r.userId === userId);
           const newReactions = exists
-            ? a.reactions.filter((r) => r !== exists)
-            : [...a.reactions, { emoji, userId }];
+            ? reactions.filter((r) => r !== exists)
+            : [...reactions, { emoji, userId }];
           return { ...a, reactions: newReactions, isPending: true };
         }
         return a;
@@ -84,6 +91,20 @@ export const useAnnouncementStore = create((set, get) => ({
     }
   },
 
+  deleteAnnouncement: (announcementId) => {
+    set((state) => ({
+      announcements: state.announcements.filter(a => a.id !== announcementId)
+    }));
+  },
+
+  updateReactions: (announcementId, reactions) => {
+    set((state) => ({
+      announcements: state.announcements.map(a =>
+        a.id === announcementId ? { ...a, reactions } : a
+      )
+    }));
+  },
+
   addComment: async (workspaceId, announcementId, content, user) => {
     const originalAnnouncements = get().announcements;
     const tempId = `temp-comment-${Date.now()}`;
@@ -94,6 +115,7 @@ export const useAnnouncementStore = create((set, get) => ({
       createdAt: new Date().toISOString(),
       isPending: true 
     };
+
 
     // Step 1: Immediate mutation
     set((state) => ({

@@ -59,8 +59,11 @@ export const createAnnouncement = async (req, res, next) => {
       }
     });
     
-    req.app.get('io').to(id).emit('announcement:created', announcement);
-    res.status(201).json(announcement);
+    // Add empty reactions array for frontend consistency
+    const announcementWithReactions = { ...announcement, reactions: [] };
+    
+    req.app.get('io').to(id).emit('announcement:created', announcementWithReactions);
+    res.status(201).json(announcementWithReactions);
   } catch (error) {
     next(error);
   }

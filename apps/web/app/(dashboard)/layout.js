@@ -101,20 +101,38 @@ export default function DashboardLayout({ children }) {
       const socket = getSocket();
       socket.emit('workspace:join', activeWorkspace.id);
       
-      socket.on('members:online', (userIds) => {
-        setOnlineMembers(userIds);
-      });
+       socket.on('members:online', (userIds) => {
+         setOnlineMembers(userIds);
+       });
 
-      socket.on('notification:new', (notification) => {
-        addNotification(notification);
-        toast(notification.message, { icon: '🔔' });
-      });
+       socket.on('notification:new', (notification) => {
+         addNotification(notification);
+         toast(notification.message, { icon: '🔔' });
+       });
 
-      return () => {
-        socket.emit('workspace:leave', activeWorkspace.id);
-        socket.off('members:online');
-        socket.off('notification:new');
-      };
+       socket.on('announcement:created', (announcement) => {
+         const { prependAnnouncement } = useAnnouncementStore.getState();
+         prependAnnouncement(announcement);
+       });
+
+       socket.on('announcement:deleted', (announcementId) => {
+         const { deleteAnnouncement } = useAnnouncementStore.getState();
+         deleteAnnouncement(announcementId);
+       });
+
+       socket.on('announcement:reacted', ({ announcementId, reactions }) => {
+         const { updateReactions } = useAnnouncementStore.getState();
+         updateReactions(announcementId, reactions);
+       });
+
+       return () => {
+         socket.emit('workspace:leave', activeWorkspace.id);
+         socket.off('members:online');
+         socket.off('notification:new');
+         socket.off('announcement:created');
+         socket.off('announcement:deleted');
+         socket.off('announcement:reacted');
+       };
     }
   }, [activeWorkspace, setOnlineMembers, addNotification]);
 
