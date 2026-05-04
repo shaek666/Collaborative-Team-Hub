@@ -31,6 +31,7 @@ export default function MembersPage() {
   const [inviting, setInviting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [openMemberMenu, setOpenMemberMenu] = useState(null);
+  const [pendingRemoval, setPendingRemoval] = useState(null); // { userId, userName }
 
   useEffect(() => {
     const load = async () => {
@@ -81,9 +82,9 @@ export default function MembersPage() {
   };
 
   const handleRemoveMember = async (userId, userName) => {
-    // Guard against invalid calls (e.g. from persisted state or race conditions)
+    // Guard: only proceed if menu is open for this user (prevents stale calls)
+    if (openMemberMenu !== userId) return;
     if (!userId || !userName || typeof userName !== 'string') return;
-    if (!confirm(`Remove ${userName} from this workspace?`)) return;
     try {
       await api.delete(`/workspaces/${workspaceId}/members/${userId}`);
       toast.success(`${userName} removed`);

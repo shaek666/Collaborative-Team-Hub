@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../lib/api';
 
-  const store = create(
+export const useWorkspaceStore = create(
     persist(
       (set, get) => ({
         workspaces: [],
