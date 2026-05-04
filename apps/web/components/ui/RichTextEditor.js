@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils';
 const TOOLBAR_BUTTONS = [
   { command: 'bold', label: 'Bold', icon: 'B', className: 'font-bold' },
   { command: 'italic', label: 'Italic', icon: 'I', className: 'italic' },
-  { command: 'underline', label: 'underline', icon: 'U', className: 'underline' },
+  { command: 'underline', label: 'Underline', icon: 'U', className: 'underline' },
   { command: 'insertUnorderedList', label: 'Bullet List', icon: '•' },
   { command: 'insertOrderedList', label: 'Numbered List', icon: '1.' },
 ];
@@ -68,14 +68,15 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
 
   const updateActiveFormats = useCallback(() => {
     if (!editorRef.current) return;
-    const formats = new Set();
+    const el = editorRef.current;
     
-    // If editor is empty, clear all active formats
-    if (!editorRef.current.innerText?.trim()) {
-      setActiveFormats(formats);
+    // Only update if editor has focus or has content
+    if (!el.innerText?.trim()) {
+      setActiveFormats(new Set());
       return;
     }
     
+    const formats = new Set();
     try {
       if (document.queryCommandState('bold')) formats.add('bold');
       if (document.queryCommandState('italic')) formats.add('italic');
@@ -94,14 +95,24 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     if (command === 'insertUnorderedList' || command === 'insertOrderedList') {
       const listTag = command === 'insertUnorderedList' ? 'ul' : 'ol';
       
-      // Get current text content
-      const text = el.innerText || '';
+      // Get current text content (strip HTML)
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = el.innerHTML;
+      const text = tempDiv.innerText || '';
       
       if (!text.trim() || text.trim() === 'Type here...') {
         el.innerHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
       } else {
-        // Wrap each line in li
-        const lines = text.split('\n').filter(l => l.trim());
+        // Get all text nodes
+        const lines = [];
+        const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          if (node.textContent.trim()) {
+            lines.push(node.textContent.trim());
+          }
+        }
+        
         if (lines.length === 0) {
           el.innerHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
         } else {
@@ -134,12 +145,16 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
 
     document.execCommand(command, false, null);
 
-    // Update active formats immediately
-    setTimeout(() => updateActiveFormats(), 0);
-
+    // Restore cursor position
     if (savedStart !== null && savedStart <= (el.innerText || '').length) {
       restoreCursor(el, savedStart);
     }
+
+    // Update active formats after command
+    setTimeout(() => {
+      el.focus();
+      updateActiveFormats();
+    }, 0);
 
     onChange(el.innerHTML);
   }, [onChange, updateActiveFormats]);
@@ -159,7 +174,6 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
             key={btn.command}
             type="button"
             onMouseDown={(e) => {
-              // Prevent default to avoid stealing focus from editor
               e.preventDefault();
             }}
             onClick={() => execCommand(btn.command)}
