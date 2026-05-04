@@ -15,12 +15,14 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
   const editorRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
   const [activeFormats, setActiveFormats] = useState(new Set());
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    if (editorRef.current && value !== editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = value || '';
+    if (isInitialMount.current && editorRef.current && value) {
+      editorRef.current.innerHTML = value;
+      isInitialMount.current = false;
     }
-  }, [value]);
+  }, []);
 
   const updateActiveFormats = useCallback(() => {
     const formats = new Set();

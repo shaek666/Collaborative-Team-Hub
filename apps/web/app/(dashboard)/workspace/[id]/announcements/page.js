@@ -52,7 +52,15 @@ export default function AnnouncementsPage() {
   const [mentionQuery, setMentionQuery] = useState('');
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const commentInputRefs = useRef({});
+
+  const EMOJI_LIST = ['😊', '👍', '🎉', '🚀', '❤️', '🔥', '🙌', '👀', '💯', '✨', '👏', '😎', '🤔', '💪', '🙏', '👋', '🌟', '📌', '🔔', '✅'];
+
+  const handleEmojiSelect = (emoji) => {
+    setNewAnnouncement(newAnnouncement + emoji);
+    setShowEmojiPicker(false);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -66,6 +74,13 @@ export default function AnnouncementsPage() {
     };
     load();
   }, [workspaceId, fetchAnnouncements]);
+
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+    const handleClick = () => setShowEmojiPicker(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [showEmojiPicker]);
 
   const handlePost = async (e) => {
     e.preventDefault();
@@ -258,15 +273,27 @@ export default function AnnouncementsPage() {
                   </button>
                 </div>
               )}
-               <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => {
-                 // Simple emoji insert
-                 const emojis = ['😊', '👍', '🎉', '🚀', '❤️', '🔥'];
-                 const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-                 const newContent = newAnnouncement + randomEmoji;
-                 setNewAnnouncement(newContent);
-               }}>
-                 <SmilePlus className="w-4 h-4" />
-               </Button>
+<div className="relative">
+                  <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+                    <SmilePlus className="w-4 h-4" />
+                  </Button>
+                  {showEmojiPicker && (
+                    <div className="absolute bottom-full left-0 mb-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 w-64 max-h-48 overflow-y-auto p-2">
+                      <div className="grid grid-cols-5 gap-1">
+                        {EMOJI_LIST.map((emoji) => (
+                          <button
+                            key={emoji}
+                            type="button"
+                            onClick={() => handleEmojiSelect(emoji)}
+                            className="w-8 h-8 flex items-center justify-center text-lg hover:bg-slate-700 rounded transition-colors"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
             </div>
             <Button type="submit" size="sm" disabled={!stripHtml(newAnnouncement).trim()} className="gap-2">
               <Send className="w-3.5 h-3.5" />

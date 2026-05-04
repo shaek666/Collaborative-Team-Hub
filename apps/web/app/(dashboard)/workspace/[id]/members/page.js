@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useWorkspaceStore } from '../../../../../stores/workspaceStore';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../../../components/ui/Card';
@@ -50,11 +50,17 @@ export default function MembersPage() {
     load();
   }, [workspaceId, fetchWorkspaces, setActiveWorkspace, workspaces]);
 
+  const memberListRef = useRef(null);
+
   useEffect(() => {
     if (!openMemberMenu) return;
-    const handleClick = () => setOpenMemberMenu(null);
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    const handleClickOutside = (event) => {
+      if (memberListRef.current && !memberListRef.current.contains(event.target)) {
+        setOpenMemberMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openMemberMenu]);
 
   const handleInvite = async (e) => {
@@ -114,7 +120,7 @@ export default function MembersPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-slate-800" ref={memberListRef}>
                 {loading ? (
                   <LoadingState label="Loading members" className="h-40" />
                 ) : members.length === 0 ? (

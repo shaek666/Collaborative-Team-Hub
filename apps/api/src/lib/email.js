@@ -18,7 +18,9 @@ export const getTransporter = () => {
 };
 
 export const sendWorkspaceInviteEmail = async (toEmail, workspaceName, inviterName) => {
-  if (!process.env.SMTP_PASS) return;
+  if (!process.env.SMTP_PASS) {
+    return;
+  }
 
   const transporter = getTransporter();
   await transporter.sendMail({

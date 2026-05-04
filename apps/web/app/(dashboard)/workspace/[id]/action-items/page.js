@@ -46,6 +46,7 @@ export default function ActionItemsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newItem, setNewItem] = useState({ title: '', description: '', priority: 'MEDIUM', dueDate: '', assigneeId: '' });
+  const [openItemMenu, setOpenItemMenu] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -79,6 +80,25 @@ export default function ActionItemsPage() {
       setCreating(false);
     }
   };
+
+  const handleDeleteItem = async (itemId, itemTitle) => {
+    if (!confirm(`Delete "${itemTitle}"?`)) return;
+    try {
+      await api.delete(`/workspaces/${workspaceId}/action-items/${itemId}`);
+      toast.success('Action item deleted');
+      setOpenItemMenu(null);
+      await fetchItems(workspaceId);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to delete action item'));
+    }
+  };
+
+  useEffect(() => {
+    if (!openItemMenu) return;
+    const handleClick = () => setOpenItemMenu(null);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [openItemMenu]);
 
   const onDragEnd = async (result) => {
     const { destination, draggableId } = result;
@@ -260,9 +280,22 @@ export default function ActionItemsPage() {
                                       <h4 className="text-sm font-medium leading-tight group-hover:text-blue-400 transition-colors">
                                         {item.title}
                                       </h4>
-                                      <button className="text-slate-600 hover:text-slate-400">
-                                        <MoreVertical className="w-3.5 h-3.5" />
-                                      </button>
+                                      <div className="relative">
+                                        <button className="text-slate-600 hover:text-slate-400" onClick={(e) => { e.stopPropagation(); setOpenItemMenu(openItemMenu === item.id ? null : item.id); }}>
+                                          <MoreVertical className="w-3.5 h-3.5" />
+                                        </button>
+                                        {openItemMenu === item.id && (
+                                          <div className="absolute right-0 top-full mt-1 w-40 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteItem(item.id, item.title)}
+                                              className="w-full text-left px-3 py-2 text-sm text-rose-400 hover:bg-slate-800 transition-colors"
+                                            >
+                                              Delete
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
 
                                     {item.goal && (

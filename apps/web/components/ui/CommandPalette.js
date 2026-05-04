@@ -92,16 +92,16 @@ export function CommandPalette() {
 
   return (
     <>
-       <button
-         type="button"
-         onClick={open}
-         className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-500 bg-slate-100 hover:bg-slate-200 border border-slate-300 hover:border-slate-400 rounded-lg transition-colors"
-         aria-label="Open command palette"
-       >
-         <Command className="w-3.5 h-3.5" />
-         <span className="hidden lg:inline">Search...</span>
-         <kbd className="hidden lg:inline px-1.5 py-0.5 text-[10px] bg-slate-200 text-slate-500 rounded">⌘K</kbd>
-       </button>
+<button
+          type="button"
+          onClick={open}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-400 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-lg transition-colors dark:bg-slate-800/50 dark:border-slate-700 dark:hover:border-slate-600"
+          aria-label="Open command palette"
+        >
+          <Command className="w-3.5 h-3.5 text-slate-400" />
+          <span className="hidden lg:inline text-slate-400">Search...</span>
+          <kbd className="hidden lg:inline px-1.5 py-0.5 text-[10px] bg-slate-700 text-slate-400 rounded dark:bg-slate-700 dark:text-slate-400">⌘K</kbd>
+        </button>
 
       <AnimatePresence>
         {isOpen && (
