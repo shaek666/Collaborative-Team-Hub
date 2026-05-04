@@ -7,8 +7,8 @@ const TOOLBAR_BUTTONS = [
   { command: 'bold', label: 'Bold', icon: 'B', className: 'font-bold' },
   { command: 'italic', label: 'Italic', icon: 'I', className: 'italic' },
   { command: 'underline', label: 'Underline', icon: 'U', className: 'underline' },
-  { command: 'insertUnorderedList', label: 'Bullet List', icon: '•' },
-  { command: 'insertOrderedList', label: 'Numbered List', icon: '1.' },
+  { command: 'bullet-list', label: 'Bullet List', icon: '•' },
+  { command: 'numbered-list', label: 'Numbered List', icon: '1.' },
 ];
 
 export function RichTextEditor({ value, onChange, placeholder, className, id }) {
@@ -81,36 +81,50 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     const el = editorRef.current;
     if (!el) return;
     
-    el.focus();
+    const isBullet = type === 'bullet-list';
+    const listTag = isBullet ? 'ul' : 'ol';
     
-    // If editor is empty, insert a line break first
-    if (!el.innerText?.trim()) {
-      el.innerHTML = '<div><br></div>';
+    // Get current content
+    const currentContent = el.innerHTML;
+    let newHTML;
+    
+    if (!currentContent.trim() || currentContent === '<br>' || currentContent === '<div><br></div>') {
+      // Empty editor - create empty list
+      newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+    } else {
+      // Wrap existing content in list items
+      // Split by line breaks
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = currentContent;
+      const lines = [];
+      const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.textContent.trim()) {
+          lines.push(node.textContent.trim());
+        }
+      }
+      
+      if (lines.length === 0) {
+        newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+      } else {
+        const items = lines.map(line => `<li>${line}</li>`).join('');
+        newHTML = `<${listTag}>${items}</${listTag}>`;
+      }
     }
     
-    // Place cursor at the end
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+    el.innerHTML = newHTML;
     
-    // Execute the command
-    const command = type === 'bullet' ? 'insertUnorderedList' : 'insertOrderedList';
-    const success = document.execCommand(command, false, null);
-    
-    // If execCommand failed, manually create the list
-    if (!success) {
-      const isBullet = type === 'bullet';
-      const listTag = isBullet ? 'ul' : 'ol';
-      const currentContent = el.innerHTML;
-      
-      if (currentContent.trim() && currentContent !== '<br>' && currentContent !== '<div><br></div>') {
-        el.innerHTML = `<${listTag}><li>${currentContent}</li></${listTag}>`;
-      } else {
-        el.innerHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
-      }
+    // Place cursor inside the first li
+    const firstLi = el.querySelector('li');
+    if (firstLi) {
+      const range = document.createRange();
+      range.selectNodeContents(firstLi);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      el.focus();
     }
     
     updateActiveFormats();
@@ -121,19 +135,15 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     const el = editorRef.current;
     if (!el) return;
     
+    // For list commands, use insertList handler
+    if (command === 'bullet-list' || command === 'numbered-list') {
+      insertList(command);
+      return;
+    }
+    
     // Ensure editor is focused before executing command
     if (document.activeElement !== el) {
       el.focus();
-    }
-    
-    // For list commands, use insertList handler
-    if (command === 'insertUnorderedList') {
-      insertList('bullet');
-      return;
-    }
-    if (command === 'insertOrderedList') {
-      insertList('numbered');
-      return;
     }
     
     // Save cursor position for text formatting commands
