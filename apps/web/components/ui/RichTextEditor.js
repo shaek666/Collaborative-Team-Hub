@@ -86,51 +86,48 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     
     el.focus();
     
-    // Place cursor at end of editor
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    
-    // Try execCommand - this works if editor has focus and cursor is placed
+    // Try execCommand first
     const command = isBullet ? 'insertUnorderedList' : 'insertOrderedList';
-    const success = document.execCommand(command, false, null);
+    document.execCommand(command, false, null);
     
-    // If execCommand failed, manually create the list
-    if (!success || !el.querySelector('ul, ol')) {
-      const currentContent = el.innerHTML;
-      let newHTML;
-      
-      if (!currentContent.trim() || currentContent === '<br>' || currentContent === '<div><br></div>') {
-        newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
-      } else {
-        // Wrap each line in li
-        const lines = currentContent.split(/<br\s*\/?>/).filter(l => l.trim());
-        if (lines.length === 0) {
+    // Check if list was created
+    setTimeout(() => {
+      if (!el.querySelector('ul, ol')) {
+        // Manually create list
+        const currentContent = el.innerHTML || '';
+        let newHTML;
+        
+        if (!currentContent.trim() || currentContent === '<br>' || currentContent === '<div><br></div>') {
           newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
         } else {
-          const items = lines.map(line => `<li>${line}</li>`).join('');
-          newHTML = `<${listTag}>${items}</${listTag}>`;
+          // Wrap each line in li
+          const lines = currentContent.split(/<br\s*\/?>/).filter(l => l.trim());
+          if (lines.length === 0) {
+            newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+          } else {
+            const items = lines.map(line => `<li>${line}</li>`).join('');
+            newHTML = `<${listTag}>${items}</${listTag}>`;
+          }
+        }
+        
+        el.innerHTML = newHTML;
+        
+        // Place cursor inside the first li
+        const firstLi = el.querySelector('li');
+        if (firstLi) {
+          const range = document.createRange();
+          range.selectNodeContents(firstLi);
+          range.collapse(false);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          el.focus();
         }
       }
       
-      el.innerHTML = newHTML;
-    }
-    
-    // Place cursor inside the first li
-    const firstLi = el.querySelector('li');
-    if (firstLi) {
-      const newRange = document.createRange();
-      newRange.selectNodeContents(firstLi);
-      newRange.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(newRange);
-    }
-    
-    updateActiveFormats();
-    onChange(el.innerHTML);
+      updateActiveFormats();
+      onChange(el.innerHTML);
+    }, 100);
   }, [onChange, updateActiveFormats]);
 
   const execCommand = useCallback((command) => {
