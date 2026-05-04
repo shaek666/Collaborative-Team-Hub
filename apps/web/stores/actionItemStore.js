@@ -12,6 +12,18 @@ export const useActionItemStore = create((set, get) => ({
     try {
       const res = await api.get(`/workspaces/${workspaceId}/action-items`, {
         params: { status, cursor },
+      });
+      const { items: newItems, nextCursor: newNextCursor } = res.data;
+      set((state) => ({
+        items: cursor ? [...state.items, ...newItems] : newItems,
+        nextCursor: newNextCursor,
+      }));
+    } catch (error) {
+      toast.error('Failed to fetch action items.');
+      throw error;
+    }
+  },
+
   deleteItem: async (workspaceId, itemId) => {
     try {
       await api.delete(`/workspaces/${workspaceId}/action-items/${itemId}`);
@@ -22,7 +34,6 @@ export const useActionItemStore = create((set, get) => ({
       throw error;
     }
   },
-});
 
 
   updateItemStatus: async (workspaceId, itemId, status) => {

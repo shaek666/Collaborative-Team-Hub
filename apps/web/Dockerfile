@@ -27,6 +27,9 @@ ARG NEXT_PUBLIC_SOCKET_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_SOCKET_URL=$NEXT_PUBLIC_SOCKET_URL
 
+# Disable SWC lockfile patching which fails in monorepo workspaces
+ENV NEXT_SWC_WORKSPACES=0
+
 RUN cd apps/web && node_modules/.bin/next build
 
 # 3. Runner stage
