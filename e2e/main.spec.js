@@ -392,7 +392,7 @@ test.describe('Collaborative Team Hub E2E - Full Coverage', () => {
   });
 
   test('24. API docs accessible', async ({ page }) => {
-    await page.goto('https://web-production-bbe80.up.railway.app/api/docs/');
+    await page.goto('https://web-production-bbe80.up.railway.app/api/docs');
     await expect(page.getByText(/Swagger UI|API Documentation|OpenAPI/i)).toBeVisible({ timeout: 15000 });
   });
 });
