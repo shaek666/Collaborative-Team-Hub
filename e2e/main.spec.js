@@ -137,6 +137,7 @@ test.describe('Collaborative Team Hub E2E - Full Coverage', () => {
     const itemTitle = `E2E Action Item ${Date.now()}`;
     await page.getByPlaceholder('What needs to be done?').fill(itemTitle);
     await page.getByRole('button', { name: /create/i }).click();
+    await expect(page.getByRole('heading', { name: /create action item/i })).not.toBeVisible({ timeout: 5000 });
     await expect(page.getByText(itemTitle)).toBeVisible({ timeout: 15000 });
   });
 
