@@ -47,7 +47,6 @@ export default function AnnouncementsPage() {
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [attachmentUploading, setAttachmentUploading] = useState(false);
   const [attachmentUrl, setAttachmentUrl] = useState(null);
-  const [openAnnouncementMenu, setOpenAnnouncementMenu] = useState(null);
 
   // @Mention state
   const [mentionQuery, setMentionQuery] = useState('');
@@ -77,17 +76,6 @@ export default function AnnouncementsPage() {
   }, [workspaceId, fetchAnnouncements]);
 
   useEffect(() => {
-    if (!openAnnouncementMenu) return;
-    const handleClick = (e) => {
-      if (!e.target.closest('[data-announcement-menu]')) {
-        setOpenAnnouncementMenu(null);
-      }
-    };
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, [openAnnouncementMenu]);
-
-  useEffect(() => {
     if (!showEmojiPicker) return;
     const handleClick = () => setShowEmojiPicker(false);
     document.addEventListener('click', handleClick);
@@ -103,17 +91,6 @@ export default function AnnouncementsPage() {
       setAttachmentFile(null);
       setAttachmentUrl(null);
     } catch {
-    }
-  };
-
-  const handleDeleteAnnouncement = async (announcementId, content) => {
-    if (!confirm('Delete this announcement?')) return;
-    try {
-      await api.delete(`/workspaces/${workspaceId}/announcements/${announcementId}`);
-      setOpenAnnouncementMenu(null);
-      await fetchAnnouncements(workspaceId);
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Failed to delete announcement'));
     }
   };
 
@@ -337,25 +314,26 @@ export default function AnnouncementsPage() {
       ) : (
         <div className="space-y-6">
           <AnimatePresence mode="popLayout">
-            {announcements.map((announcement, i) => (
-              <AnnouncementCard
-                key={announcement.id}
-                announcement={announcement}
-                user={user}
-                workspaceId={workspaceId}
-                onAddReaction={addReaction}
-                onAddComment={handleCommentWithMentions}
-                isPending={pendingIds.has(announcement.id)}
-                members={members}
-                handleCommentInput={handleCommentInput}
-                commentInputRefs={commentInputRefs}
-                showMentionDropdown={showMentionDropdown}
-                mentionQuery={mentionQuery}
-                mentionPosition={mentionPosition}
-                onMentionSelect={(name) => handleMentionSelect(name, { current: commentInputRefs.current[announcement.id] })}
-                index={i}
-              />
-            ))}
+             {announcements.map((announcement, i) => (
+               <AnnouncementCard
+                 key={announcement.id}
+                 announcement={announcement}
+                 user={user}
+                 workspaceId={workspaceId}
+                 onAddReaction={addReaction}
+                 onAddComment={handleCommentWithMentions}
+                 isPending={pendingIds.has(announcement.id)}
+                 members={members}
+                 handleCommentInput={handleCommentInput}
+                 commentInputRefs={commentInputRefs}
+                 showMentionDropdown={showMentionDropdown}
+                 mentionQuery={mentionQuery}
+                 mentionPosition={mentionPosition}
+                 onMentionSelect={(name) => handleMentionSelect(name, { current: commentInputRefs.current[announcement.id] })}
+                 index={i}
+                 onDelete={handleDeleteAnnouncement}
+               />
+             ))}
           </AnimatePresence>
         </div>
       )}
@@ -363,10 +341,22 @@ export default function AnnouncementsPage() {
   );
 }
 
-function AnnouncementCard({ announcement, user, workspaceId, onAddReaction, onAddComment, isPending, members, handleCommentInput, commentInputRefs, showMentionDropdown, mentionQuery, mentionPosition, onMentionSelect, index }) {
+function AnnouncementCard({ announcement, user, workspaceId, onAddReaction, onAddComment, isPending, members, handleCommentInput, commentInputRefs, showMentionDropdown, mentionQuery, mentionPosition, onMentionSelect, index, onDelete }) {
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState(false);
+  const [openMenu, setOpenMenu] = useState(false);
   const localInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!openMenu) return;
+    const handleClick = (e) => {
+      if (!e.target.closest('[data-announcement-menu]')) {
+        setOpenMenu(false);
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [openMenu]);
 
   useEffect(() => {
     if (localInputRef.current) {
@@ -419,22 +409,22 @@ function AnnouncementCard({ announcement, user, workspaceId, onAddReaction, onAd
                  </p>
                </div>
              </div>
-             <div className="relative">
-               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); setOpenAnnouncementMenu(openAnnouncementMenu === announcement.id ? null : announcement.id); }}>
-                 <MoreVertical className="w-4 h-4" />
-               </Button>
-               {openAnnouncementMenu === announcement.id && (
-                 <div data-announcement-menu className="absolute right-0 top-full mt-1 w-40 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
-                   <button
-                     type="button"
-                     onClick={() => handleDeleteAnnouncement(announcement.id, announcement.content)}
-                     className="w-full text-left px-3 py-2 text-sm text-rose-400 hover:bg-slate-800 transition-colors"
-                   >
-                     Delete
-                   </button>
-                 </div>
-               )}
-             </div>
+              <div className="relative">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu ? null : 'menu'); }}>
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+                {openMenu && (
+                  <div data-announcement-menu className="absolute right-0 top-full mt-1 w-40 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => { setOpenMenu(null); onDelete(announcement.id, announcement.content); }}
+                      className="w-full text-left px-3 py-2 text-sm text-rose-400 hover:bg-slate-800 transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
            </div>
 
           <div 
