@@ -118,12 +118,13 @@ export default function ActionItemsPage() {
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
-            <button
+                  <button
               onClick={() => setView('list')}
               className={cn(
                 "p-1.5 rounded-md transition-all",
                 view === 'list' ? "bg-slate-800 text-blue-500 shadow-sm" : "text-slate-500 hover:text-slate-300"
               )}
+              aria-label="Switch to list view"
             >
               <ListIcon className="w-4 h-4" />
             </button>

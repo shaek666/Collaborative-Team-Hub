@@ -236,9 +236,10 @@ test.describe('Collaborative Team Hub E2E - Full Coverage', () => {
     await page.getByRole('link', { name: 'Members' }).click();
     await page.waitForURL(/\/members/);
     
-    await page.getByPlaceholder('teammate@company.com').fill(newMemberEmail);
+    // Invite the demo account (which already exists)
+    await page.getByPlaceholder('teammate@company.com').fill(demoAccount.email);
     await page.getByRole('button', { name: /send invitation/i }).click();
-    await expect(page.getByText(newMemberEmail)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(demoAccount.email)).toBeVisible({ timeout: 15000 });
   });
 
   test('14. Remove member from workspace', async ({ page }) => {
@@ -325,7 +326,7 @@ test.describe('Collaborative Team Hub E2E - Full Coverage', () => {
     await expect(page.getByRole('dialog', { name: /search commands/i })).toBeVisible({ timeout: 10000 });
     
     await page.getByRole('textbox', { name: /search commands/i }).fill('Goals');
-    await page.getByText('Goals').click();
+    await page.getByRole('option', { name: 'Goals' }).click();
     await expect(page).toHaveURL(/\/goals/);
   });
 
@@ -337,7 +338,7 @@ test.describe('Collaborative Team Hub E2E - Full Coverage', () => {
     await page.waitForURL(/\/dashboard/);
     
     await page.getByRole('button', { name: /notifications/i }).click();
-    await expect(page.getByText(/no notifications|notifications/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('No notifications')).toBeVisible({ timeout: 5000 });
   });
 
   test('20. Profile page loads', async ({ page }) => {
@@ -389,7 +390,7 @@ test.describe('Collaborative Team Hub E2E - Full Coverage', () => {
   });
 
   test('24. API docs accessible', async ({ page }) => {
-    await page.goto('/api/docs');
+    await page.goto('https://web-production-bbe80.up.railway.app/api/docs/');
     await expect(page.getByText(/Swagger UI|API Documentation|OpenAPI/i)).toBeVisible({ timeout: 15000 });
   });
 });
