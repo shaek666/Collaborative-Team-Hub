@@ -186,19 +186,18 @@ export const removeMember = async (req, res, next) => {
     const { id, userId } = req.params;
     
     // Prevent removing the last admin
-    const workspaceMembers = await prisma.workspaceMember.findMany({
-      where: { workspaceId: id },
-      select: { userId: true, role: true }
+    const adminCount = await prisma.workspaceMember.count({
+      where: { workspaceId: id, role: 'ADMIN' }
     });
     
-    const targetMember = workspaceMembers.find(m => m.userId === userId);
-    if (!targetMember) return sendError(res, 404, 'Member not found');
+    const targetMember = await prisma.workspaceMember.findUnique({
+      where: { userId_workspaceId: { userId, workspaceId: id } }
+    });
     
-    if (targetMember.role === 'ADMIN') {
-      const adminCount = workspaceMembers.filter(m => m.role === 'ADMIN').length;
-      if (adminCount <= 1) {
-        return sendError(res, 400, 'Cannot remove the last admin');
-      }
+    if (!targetMember) return sendError(res, 404, 'Member not found');
+
+    if (targetMember.role === 'ADMIN' && adminCount <= 1) {
+      return sendError(res, 400, 'Cannot remove the last admin');
     }
 
     await prisma.workspaceMember.delete({

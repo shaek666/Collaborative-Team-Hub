@@ -47,6 +47,7 @@ export default function AnnouncementsPage() {
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [attachmentUploading, setAttachmentUploading] = useState(false);
   const [attachmentUrl, setAttachmentUrl] = useState(null);
+  const [openAnnouncementMenu, setOpenAnnouncementMenu] = useState(null);
 
   // @Mention state
   const [mentionQuery, setMentionQuery] = useState('');
@@ -76,6 +77,17 @@ export default function AnnouncementsPage() {
   }, [workspaceId, fetchAnnouncements]);
 
   useEffect(() => {
+    if (!openAnnouncementMenu) return;
+    const handleClick = (e) => {
+      if (!e.target.closest('[data-announcement-menu]')) {
+        setOpenAnnouncementMenu(null);
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [openAnnouncementMenu]);
+
+  useEffect(() => {
     if (!showEmojiPicker) return;
     const handleClick = () => setShowEmojiPicker(false);
     document.addEventListener('click', handleClick);
@@ -91,6 +103,17 @@ export default function AnnouncementsPage() {
       setAttachmentFile(null);
       setAttachmentUrl(null);
     } catch {
+    }
+  };
+
+  const handleDeleteAnnouncement = async (announcementId, content) => {
+    if (!confirm('Delete this announcement?')) return;
+    try {
+      await api.delete(`/workspaces/${workspaceId}/announcements/${announcementId}`);
+      setOpenAnnouncementMenu(null);
+      await fetchAnnouncements(workspaceId);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Failed to delete announcement'));
     }
   };
 
@@ -373,33 +396,46 @@ function AnnouncementCard({ announcement, user, workspaceId, onAddReaction, onAd
         )}
         
         <CardContent className="p-6 space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden">
-                {announcement.author?.avatarUrl ? (
-                  <img src={announcement.author.avatarUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs font-bold uppercase">
-                    {announcement.author?.name?.charAt(0)}
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-semibold flex items-center gap-2">
-                  {announcement.author?.name}
-                  {announcement.isPinned && (
-                    <Pin aria-label="Pinned announcement" className="w-3 h-3 text-blue-500 fill-blue-500" />
-                  )}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {format(new Date(announcement.createdAt), 'MMM d • h:mm a')}
-                </p>
-              </div>
-            </div>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </div>
+           <div className="flex items-start justify-between">
+             <div className="flex items-center gap-3">
+               <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 overflow-hidden">
+                 {announcement.author?.avatarUrl ? (
+                   <img src={announcement.author.avatarUrl} alt="" className="w-full h-full object-cover" />
+                 ) : (
+                   <div className="w-full h-full flex items-center justify-center text-xs font-bold uppercase">
+                     {announcement.author?.name?.charAt(0)}
+                   </div>
+                 )}
+               </div>
+               <div>
+                 <p className="text-sm font-semibold flex items-center gap-2">
+                   {announcement.author?.name}
+                   {announcement.isPinned && (
+                     <Pin aria-label="Pinned announcement" className="w-3 h-3 text-blue-500 fill-blue-500" />
+                   )}
+                 </p>
+                 <p className="text-xs text-slate-500">
+                   {format(new Date(announcement.createdAt), 'MMM d • h:mm a')}
+                 </p>
+               </div>
+             </div>
+             <div className="relative">
+               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); setOpenAnnouncementMenu(openAnnouncementMenu === announcement.id ? null : announcement.id); }}>
+                 <MoreVertical className="w-4 h-4" />
+               </Button>
+               {openAnnouncementMenu === announcement.id && (
+                 <div data-announcement-menu className="absolute right-0 top-full mt-1 w-40 bg-slate-900 border border-slate-800 rounded-lg shadow-xl z-50 py-1" onClick={(e) => e.stopPropagation()}>
+                   <button
+                     type="button"
+                     onClick={() => handleDeleteAnnouncement(announcement.id, announcement.content)}
+                     className="w-full text-left px-3 py-2 text-sm text-rose-400 hover:bg-slate-800 transition-colors"
+                   >
+                     Delete
+                   </button>
+                 </div>
+               )}
+             </div>
+           </div>
 
           <div 
             className="text-slate-200 leading-relaxed prose prose-invert prose-sm max-w-none"

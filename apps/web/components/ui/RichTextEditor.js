@@ -15,17 +15,59 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
   const editorRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
   const [activeFormats, setActiveFormats] = useState(new Set());
-  const lastChangeFromEditor = useRef(false);
+  const isComposing = useRef(false);
+  const skipNextInput = useRef(false);
 
+  // Set content only when value changes externally (not from user input)
   useEffect(() => {
-    if (lastChangeFromEditor.current) {
-      lastChangeFromEditor.current = false;
-      return;
-    }
-    if (editorRef.current && value !== editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = value || '';
+    if (editorRef.current && !isComposing.current) {
+      const el = editorRef.current;
+      if (value !== el.innerHTML) {
+        // Save cursor position
+        const sel = window.getSelection();
+        const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+        const savedStart = range && el.contains(range.startContainer) ? getTextOffset(el, range.startContainer, range.startOffset) : null;
+
+        el.innerHTML = value || '';
+
+        // Restore cursor position
+        if (savedStart !== null && savedStart <= (el.innerText || '').length) {
+          restoreCursor(el, savedStart);
+        }
+      }
     }
   }, [value]);
+
+  // Get character offset within an element
+  const getTextOffset = (root, container, offset) => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let charOffset = 0;
+    let node;
+    while ((node = walker.nextNode())) {
+      if (node === container) return charOffset + offset;
+      charOffset += node.textContent.length;
+    }
+    return charOffset;
+  };
+
+  // Restore cursor to a character offset
+  const restoreCursor = (root, offset) => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let charOffset = 0;
+    let node;
+    while ((node = walker.nextNode())) {
+      if (charOffset + node.textContent.length >= offset) {
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.setStart(node, offset - charOffset);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        return;
+      }
+      charOffset += node.textContent.length;
+    }
+  };
 
   const updateActiveFormats = useCallback(() => {
     const formats = new Set();
@@ -40,14 +82,12 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     editorRef.current?.focus();
     updateActiveFormats();
     if (editorRef.current) {
-      lastChangeFromEditor.current = true;
       onChange(editorRef.current.innerHTML);
     }
   }, [onChange, updateActiveFormats]);
 
   const handleInput = useCallback(() => {
-    lastChangeFromEditor.current = true;
-    if (editorRef.current) {
+    if (editorRef.current && !isComposing.current) {
       onChange(editorRef.current.innerHTML);
     }
   }, [onChange]);
@@ -98,10 +138,14 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
         }}
         onKeyUp={updateActiveFormats}
         onMouseUp={updateActiveFormats}
+        onCompositionStart={() => { isComposing.current = true; }}
+        onCompositionEnd={() => {
+          isComposing.current = false;
+          handleInput();
+        }}
         role="textbox"
         aria-multiline="true"
         aria-label={placeholder}
-        dangerouslySetInnerHTML={{ __html: value || '' }}
         data-placeholder={placeholder}
         style={{ '--tw-content': placeholder }}
       />
