@@ -6,9 +6,9 @@ import { cn } from '../../lib/utils';
 const TOOLBAR_BUTTONS = [
   { command: 'bold', label: 'Bold', icon: 'B', className: 'font-bold' },
   { command: 'italic', label: 'Italic', icon: 'I', className: 'italic' },
-  { command: 'underline', label: 'Underline', icon: 'U', className: 'underline' },
-  { command: 'bullet-list', label: 'Bullet List', icon: '•' },
-  { command: 'numbered-list', label: 'Numbered List', icon: '1.' },
+  { command: 'underline', label: 'underline', icon: 'U', className: 'underline' },
+  { command: 'insertUnorderedList', label: 'Bullet List', icon: '•' },
+  { command: 'insertOrderedList', label: 'Numbered List', icon: '1.' },
 ];
 
 export function RichTextEditor({ value, onChange, placeholder, className, id }) {
@@ -69,9 +69,18 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
   const updateActiveFormats = useCallback(() => {
     if (!editorRef.current) return;
     const formats = new Set();
-    try { if (document.queryCommandState('bold')) formats.add('bold'); } catch(e) {}
-    try { if (document.queryCommandState('italic')) formats.add('italic'); } catch(e) {}
-    try { if (document.queryCommandState('underline')) formats.add('underline'); } catch(e) {}
+    
+    // If editor is empty, clear all active formats
+    if (!editorRef.current.innerText?.trim()) {
+      setActiveFormats(formats);
+      return;
+    }
+    
+    try {
+      if (document.queryCommandState('bold')) formats.add('bold');
+      if (document.queryCommandState('italic')) formats.add('italic');
+      if (document.queryCommandState('underline')) formats.add('underline');
+    } catch (e) {}
     setActiveFormats(formats);
   }, []);
 
@@ -79,31 +88,27 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     const el = editorRef.current;
     if (!el) return;
 
-    // Handle list commands separately
-    if (command === 'bullet-list' || command === 'numbered-list') {
-      const listTag = command === 'bullet-list' ? 'ul' : 'ol';
-      el.focus();
+    el.focus();
+
+    // Handle list commands
+    if (command === 'insertUnorderedList' || command === 'insertOrderedList') {
+      const listTag = command === 'insertUnorderedList' ? 'ul' : 'ol';
       
-      // Get selected text or all content
-      const sel = window.getSelection();
-      const selectedText = sel.toString().trim();
-      let contentToWrap = selectedText || el.innerText || '';
+      // Get current text content
+      const text = el.innerText || '';
       
-      // Create list items
-      let listHTML;
-      if (!contentToWrap || contentToWrap === 'Type here...') {
-        listHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+      if (!text.trim() || text.trim() === 'Type here...') {
+        el.innerHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
       } else {
-        const lines = contentToWrap.split('\n').filter(l => l.trim());
+        // Wrap each line in li
+        const lines = text.split('\n').filter(l => l.trim());
         if (lines.length === 0) {
-          listHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+          el.innerHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
         } else {
           const items = lines.map(l => `<li>${l}</li>`).join('');
-          listHTML = `<${listTag}>${items}</${listTag}>`;
+          el.innerHTML = `<${listTag}>${items}</${listTag}>`;
         }
       }
-      
-      el.innerHTML = listHTML;
       
       // Place cursor in first li
       const firstLi = el.querySelector('li');
@@ -111,6 +116,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
         const range = document.createRange();
         range.selectNodeContents(firstLi);
         range.collapse(false);
+        const sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
       }
@@ -119,8 +125,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
       return;
     }
 
-    // Handle text formatting commands
-    el.focus();
+    // Handle text formatting
     const sel = window.getSelection();
     const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
     const savedStart = range && el.contains(range.startContainer) 
@@ -129,11 +134,13 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
 
     document.execCommand(command, false, null);
 
+    // Update active formats immediately
+    setTimeout(() => updateActiveFormats(), 0);
+
     if (savedStart !== null && savedStart <= (el.innerText || '').length) {
       restoreCursor(el, savedStart);
     }
 
-    updateActiveFormats();
     onChange(el.innerHTML);
   }, [onChange, updateActiveFormats]);
 
