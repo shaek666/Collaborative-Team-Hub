@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../lib/api';
 import { connectSocket, disconnectSocket } from '../lib/socket';
+import { useWorkspaceStore } from './workspaceStore';
 
 export const useAuthStore = create(
   persist(
@@ -28,6 +29,8 @@ export const useAuthStore = create(
           const res = await api.post('/auth/login', { email, password });
           set({ user: res.data, isAuthenticated: true });
           connectSocket();
+          // Clear stale workspace data
+          useWorkspaceStore.getState().clearWorkspace();
           return res.data;
         } catch (error) {
           disconnectSocket();
@@ -40,6 +43,8 @@ export const useAuthStore = create(
           const res = await api.post('/auth/register', { name, email, password });
           set({ user: res.data, isAuthenticated: true });
           connectSocket();
+          // Clear stale workspace data
+          useWorkspaceStore.getState().clearWorkspace();
           return res.data;
         } catch (error) {
           disconnectSocket();

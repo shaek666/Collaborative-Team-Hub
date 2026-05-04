@@ -157,9 +157,11 @@ export default function DashboardLayout({ children }) {
   const handleLogout = async () => {
     try {
       await logout();
-      router.push('/login');
+      // Don't push to /login here - the useEffect will handle redirect
+      // after isAuthenticated becomes false
     } catch (error) {
-      toast.error('Failed to log out');
+      // Logout clears state even if API fails, so don't show error
+      console.error('Logout error:', error);
     }
   };
 

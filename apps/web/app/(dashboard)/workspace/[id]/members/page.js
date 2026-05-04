@@ -82,17 +82,15 @@ export default function MembersPage() {
   };
 
   const handleRemoveMember = async (userId, userName) => {
-    // Guard: only proceed if menu is open for this user (prevents stale calls)
-    if (openMemberMenu !== userId) return;
     if (!userId || !userName || typeof userName !== 'string') return;
+    setOpenMemberMenu(null);
     try {
       await api.delete(`/workspaces/${workspaceId}/members/${userId}`);
       toast.success(`${userName} removed`);
-      // Refresh workspace data without re-triggering the effect
+      // Refresh workspace data
       const res = await api.get(`/workspaces/${workspaceId}`);
       const { setActiveWorkspace } = useWorkspaceStore.getState();
       setActiveWorkspace(res.data);
-      setOpenMemberMenu(null);
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to remove member'));
     }
