@@ -81,16 +81,29 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     const el = editorRef.current;
     if (!el) return;
     
-    // Save cursor position
-    const sel = window.getSelection();
-    const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-    const savedStart = range && el.contains(range.startContainer) ? getTextOffset(el, range.startContainer, range.startOffset) : null;
+    // Ensure editor is focused before executing command
+    if (document.activeElement !== el) {
+      el.focus();
+    }
     
-    document.execCommand(command, false, null);
+    // For list commands, don't save/restore cursor - let browser handle it
+    const isListCommand = command === 'insertUnorderedList' || command === 'insertOrderedList';
     
-    // Restore cursor position
-    if (savedStart !== null && savedStart <= (el.innerText || '').length) {
-      restoreCursor(el, savedStart);
+    if (!isListCommand) {
+      // Save cursor position for text formatting commands
+      const sel = window.getSelection();
+      const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+      const savedStart = range && el.contains(range.startContainer) ? getTextOffset(el, range.startContainer, range.startOffset) : null;
+      
+      document.execCommand(command, false, null);
+      
+      // Restore cursor position
+      if (savedStart !== null && savedStart <= (el.innerText || '').length) {
+        restoreCursor(el, savedStart);
+      }
+    } else {
+      // For list commands, just execute and let browser handle cursor
+      document.execCommand(command, false, null);
     }
     
     updateActiveFormats();
