@@ -12,15 +12,18 @@ export const useActionItemStore = create((set, get) => ({
     try {
       const res = await api.get(`/workspaces/${workspaceId}/action-items`, {
         params: { status, cursor },
-      });
+  deleteItem: async (workspaceId, itemId) => {
+    try {
+      await api.delete(`/workspaces/${workspaceId}/action-items/${itemId}`);
       set((state) => ({
-        items: cursor ? [...state.items, ...res.data.data] : res.data.data,
-        nextCursor: res.data.nextCursor,
+        items: state.items.filter((item) => item.id !== itemId),
       }));
     } catch (error) {
       throw error;
     }
   },
+});
+
 
   updateItemStatus: async (workspaceId, itemId, status) => {
     const originalItems = get().items;
