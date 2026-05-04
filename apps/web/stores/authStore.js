@@ -47,17 +47,20 @@ export const useAuthStore = create(
         }
       },
 
-      logout: async () => {
-        try {
-          await api.post('/auth/logout');
-        } catch (error) {
-          // Continue with logout even if API call fails
-        }
-        set({ user: null, isAuthenticated: false, isLoading: false });
-        disconnectSocket();
-        // Clear persisted state
-        get().clearAuth();
-      },
+       logout: async () => {
+         try {
+           await api.post('/auth/logout');
+         } catch (error) {
+           // Continue with logout even if API call fails
+         }
+         set({ user: null, isAuthenticated: false, isLoading: false });
+         disconnectSocket();
+         // Clear persisted state
+         get().clearAuth();
+         // Clear workspace state
+         const { clearWorkspace } = useWorkspaceStore.getState();
+         clearWorkspace();
+       },
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
 

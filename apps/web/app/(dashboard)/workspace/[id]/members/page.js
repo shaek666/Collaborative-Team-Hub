@@ -81,6 +81,8 @@ export default function MembersPage() {
   };
 
   const handleRemoveMember = async (userId, userName) => {
+    // Guard against invalid calls (e.g. from persisted state or race conditions)
+    if (!userId || !userName || typeof userName !== 'string') return;
     if (!confirm(`Remove ${userName} from this workspace?`)) return;
     try {
       await api.delete(`/workspaces/${workspaceId}/members/${userId}`);
