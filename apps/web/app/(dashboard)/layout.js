@@ -7,6 +7,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { useThemeStore } from '../../stores/themeStore';
+import { useGoalStore } from '../../stores/goalStore';
 import { getSocket } from '../../lib/socket';
 import { CommandPalette } from '../../components/ui/CommandPalette';
 import { 
@@ -121,18 +122,32 @@ export default function DashboardLayout({ children }) {
        });
 
        socket.on('announcement:reacted', ({ announcementId, reactions }) => {
-         const { updateReactions } = useAnnouncementStore.getState();
-         updateReactions(announcementId, reactions);
-       });
+          const { updateReactions } = useAnnouncementStore.getState();
+          updateReactions(announcementId, reactions);
+        });
 
-       return () => {
-         socket.emit('workspace:leave', activeWorkspace.id);
-         socket.off('members:online');
-         socket.off('notification:new');
-         socket.off('announcement:created');
-         socket.off('announcement:deleted');
-         socket.off('announcement:reacted');
-       };
+        socket.on('milestone:updated', (milestone) => {
+          const { updateGoalStatus } = useGoalStore.getState();
+          // The goal status will be updated server-side and reflected via goal:updated event
+        });
+
+        socket.on('goal:updated', (updatedGoal) => {
+          const { updateGoalInStore } = useGoalStore.getState();
+          if (updateGoalInStore) {
+            updateGoalInStore(updatedGoal);
+          }
+        });
+
+        return () => {
+          socket.emit('workspace:leave', activeWorkspace.id);
+          socket.off('members:online');
+          socket.off('notification:new');
+          socket.off('announcement:created');
+          socket.off('announcement:deleted');
+          socket.off('announcement:reacted');
+          socket.off('milestone:updated');
+          socket.off('goal:updated');
+        };
     }
   }, [activeWorkspace, setOnlineMembers, addNotification]);
 

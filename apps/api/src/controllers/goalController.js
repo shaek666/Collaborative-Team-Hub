@@ -132,7 +132,8 @@ export const updateMilestone = async (req, res, next) => {
       where: {
         id: milestoneId,
         goal: { workspaceId: id }
-      }
+      },
+      include: { goal: { include: { milestones: true } } }
     });
     if (!milestoneCheck) return sendError(res, 404, 'Milestone not found in this workspace');
 
@@ -140,6 +141,31 @@ export const updateMilestone = async (req, res, next) => {
       where: { id: milestoneId },
       data: { progressPercent, completed }
     });
+    
+    // Auto-update goal status based on milestones
+    const goal = milestoneCheck.goal;
+    const totalMilestones = goal.milestones.length;
+    
+    if (totalMilestones > 0) {
+      const completedCount = goal.milestones.filter(m => m.id === milestoneId ? completed : m.completed).length;
+      
+      let newStatus = goal.status;
+      if (completedCount === totalMilestones) {
+        newStatus = 'COMPLETED';
+      } else if (completedCount > 0) {
+        newStatus = 'IN_PROGRESS';
+      } else {
+        newStatus = 'NOT_STARTED';
+      }
+      
+      if (newStatus !== goal.status) {
+        const updatedGoal = await prisma.goal.update({
+          where: { id: goal.id },
+          data: { status: newStatus }
+        });
+        req.app.get('io').to(id).emit('goal:updated', updatedGoal);
+      }
+    }
     
     req.app.get('io').to(id).emit('milestone:updated', milestone);
     res.json(milestone);

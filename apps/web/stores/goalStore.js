@@ -147,7 +147,12 @@ export const useGoalStore = create((set, get) => ({
       set((state) => ({
         goals: state.goals.map((g) => {
           if (g.id === goalId) {
-            return { ...g, milestones: [...(g.milestones || []), res.data] };
+            const newStatus = g.status === 'NOT_STARTED' ? 'IN_PROGRESS' : g.status;
+            return { 
+              ...g, 
+              milestones: [...(g.milestones || []), res.data],
+              status: newStatus
+            };
           }
           return g;
         }),
@@ -162,32 +167,68 @@ export const useGoalStore = create((set, get) => ({
   toggleMilestone: async (workspaceId, goalId, milestoneId) => {
     const originalGoals = get().goals;
     // Optimistic update
-    set((state) => ({
-      goals: state.goals.map((g) => {
+    set((state) => {
+      const updatedGoals = state.goals.map((g) => {
         if (g.id === goalId) {
+          const updatedMilestones = g.milestones?.map((m) =>
+            m.id === milestoneId ? { ...m, completed: !m.completed } : m
+          ) || [];
+          
+          // Auto-calculate goal status based on milestones
+          const totalMilestones = updatedMilestones.length;
+          let newStatus = g.status;
+          
+          if (totalMilestones > 0) {
+            const completedCount = updatedMilestones.filter(m => m.completed).length;
+            
+            if (completedCount === totalMilestones) {
+              newStatus = 'COMPLETED';
+            } else if (completedCount > 0) {
+              newStatus = 'IN_PROGRESS';
+            } else {
+              newStatus = 'NOT_STARTED';
+            }
+          }
+          
           return {
             ...g,
-            milestones: g.milestones?.map((m) =>
-              m.id === milestoneId ? { ...m, completed: !m.completed } : m
-            ),
+            milestones: updatedMilestones,
+            status: newStatus,
           };
         }
         return g;
-      }),
-    }));
+      });
+      return { goals: updatedGoals };
+    });
 
     try {
-      const milestone = originalGoals
-        .find((g) => g.id === goalId)?.milestones?.find((m) => m.id === milestoneId);
+      const goal = originalGoals.find((g) => g.id === goalId);
+      const milestone = goal?.milestones?.find((m) => m.id === milestoneId);
       const completed = !milestone?.completed;
+      
+      // Update milestone
       await api.patch(
         `/workspaces/${workspaceId}/goals/${goalId}/milestones/${milestoneId}`,
         { completed }
       );
+      
+      // Recalculate and update goal status
+      const updatedGoal = get().goals.find((g) => g.id === goalId);
+      if (updatedGoal && updatedGoal.status !== goal?.status) {
+        await api.patch(`/workspaces/${workspaceId}/goals/${goalId}`, { status: updatedGoal.status });
+      }
     } catch (error) {
       // Rollback
       set({ goals: originalGoals });
       toast.error('Failed to update milestone.');
     }
+  },
+
+  updateGoalInStore: (updatedGoal) => {
+    set((state) => ({
+      goals: state.goals.map((g) => 
+        g.id === updatedGoal.id ? { ...g, ...updatedGoal } : g
+      ),
+    }));
   },
 }));
