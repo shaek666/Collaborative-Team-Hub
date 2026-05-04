@@ -83,49 +83,38 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     
     el.focus();
     
-    const sel = window.getSelection();
-    const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-    
-    // Ensure we have a valid cursor position in the editor
-    if (!range || !el.contains(range.startContainer)) {
-      const newRange = document.createRange();
-      newRange.selectNodeContents(el);
-      newRange.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(newRange);
+    // If editor is empty, insert a line break first
+    if (!el.innerText?.trim()) {
+      el.innerHTML = '<div><br></div>';
     }
     
-    // Try execCommand
-    const command = type === 'bullet' ? 'insertUnorderedList' : 'insertOrderedList';
-    document.execCommand(command, false, null);
+    // Place cursor at the end
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
     
-    // Check if list was created; if not, manually create it
-    setTimeout(() => {
-      const hasList = el.querySelector('ul, ol');
-      if (!hasList) {
-        // Manually create list
-        const content = el.innerHTML || '';
-        if (content.trim()) {
-          const isBullet = type === 'bullet';
-          const listTag = isBullet ? 'ul' : 'ol';
-          const itemTag = 'li';
-          // Wrap existing content in list items
-          const lines = content.split('<br>').filter(l => l.trim());
-          if (lines.length === 0) {
-            el.innerHTML = `<${listTag}><${itemTag}>Type here...</${itemTag}></${listTag}>`;
-          } else {
-            const listItems = lines.map(line => `<${itemTag}>${line}</${itemTag}>`).join('');
-            el.innerHTML = `<${listTag}>${listItems}</${listTag}>`;
-          }
-        } else {
-          const isBullet = type === 'bullet';
-          const listTag = isBullet ? 'ul' : 'ol';
-          el.innerHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
-        }
-        onChange(el.innerHTML);
+    // Execute the command
+    const command = type === 'bullet' ? 'insertUnorderedList' : 'insertOrderedList';
+    const success = document.execCommand(command, false, null);
+    
+    // If execCommand failed, manually create the list
+    if (!success) {
+      const isBullet = type === 'bullet';
+      const listTag = isBullet ? 'ul' : 'ol';
+      const currentContent = el.innerHTML;
+      
+      if (currentContent.trim() && currentContent !== '<br>' && currentContent !== '<div><br></div>') {
+        el.innerHTML = `<${listTag}><li>${currentContent}</li></${listTag}>`;
+      } else {
+        el.innerHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
       }
-      updateActiveFormats();
-    }, 50);
+    }
+    
+    updateActiveFormats();
+    onChange(el.innerHTML);
   }, [onChange, updateActiveFormats]);
 
   const execCommand = useCallback((command) => {
@@ -180,12 +169,6 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
              key={btn.command}
              type="button"
              onClick={() => execCommand(btn.command)}
-             onMouseDown={(e) => {
-               // Prevent default to avoid stealing focus from editor (except for list commands)
-               if (btn.command !== 'insertUnorderedList' && btn.command !== 'insertOrderedList') {
-                 e.preventDefault();
-               }
-             }}
              aria-label={btn.label}
              className={cn(
                'w-8 h-8 flex items-center justify-center rounded text-sm transition-colors text-slate-400 hover:bg-slate-700 hover:text-slate-200',
