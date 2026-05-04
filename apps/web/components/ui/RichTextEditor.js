@@ -84,47 +84,49 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     const isBullet = type === 'bullet-list';
     const listTag = isBullet ? 'ul' : 'ol';
     
-    // Get current content
-    const currentContent = el.innerHTML;
-    let newHTML;
+    el.focus();
     
-    if (!currentContent.trim() || currentContent === '<br>' || currentContent === '<div><br></div>') {
-      // Empty editor - create empty list
-      newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
-    } else {
-      // Wrap existing content in list items
-      // Split by line breaks
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = currentContent;
-      const lines = [];
-      const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT);
-      let node;
-      while ((node = walker.nextNode())) {
-        if (node.textContent.trim()) {
-          lines.push(node.textContent.trim());
+    // Place cursor at end of editor
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    
+    // Try execCommand - this works if editor has focus and cursor is placed
+    const command = isBullet ? 'insertUnorderedList' : 'insertOrderedList';
+    const success = document.execCommand(command, false, null);
+    
+    // If execCommand failed, manually create the list
+    if (!success || !el.querySelector('ul, ol')) {
+      const currentContent = el.innerHTML;
+      let newHTML;
+      
+      if (!currentContent.trim() || currentContent === '<br>' || currentContent === '<div><br></div>') {
+        newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+      } else {
+        // Wrap each line in li
+        const lines = currentContent.split(/<br\s*\/?>/).filter(l => l.trim());
+        if (lines.length === 0) {
+          newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+        } else {
+          const items = lines.map(line => `<li>${line}</li>`).join('');
+          newHTML = `<${listTag}>${items}</${listTag}>`;
         }
       }
       
-      if (lines.length === 0) {
-        newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
-      } else {
-        const items = lines.map(line => `<li>${line}</li>`).join('');
-        newHTML = `<${listTag}>${items}</${listTag}>`;
-      }
+      el.innerHTML = newHTML;
     }
-    
-    el.innerHTML = newHTML;
     
     // Place cursor inside the first li
     const firstLi = el.querySelector('li');
     if (firstLi) {
-      const range = document.createRange();
-      range.selectNodeContents(firstLi);
-      range.collapse(false);
-      const sel = window.getSelection();
+      const newRange = document.createRange();
+      newRange.selectNodeContents(firstLi);
+      newRange.collapse(false);
       sel.removeAllRanges();
-      sel.addRange(range);
-      el.focus();
+      sel.addRange(newRange);
     }
     
     updateActiveFormats();
