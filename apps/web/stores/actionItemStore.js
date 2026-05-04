@@ -61,7 +61,13 @@ export const useActionItemStore = create((set, get) => ({
 
   createItem: async (workspaceId, data) => {
     try {
-      const res = await api.post(`/workspaces/${workspaceId}/action-items`, data);
+      const payload = {
+        ...data,
+        assigneeId: data.assigneeId || undefined,
+        dueDate: data.dueDate || undefined,
+        goalId: data.goalId || undefined,
+      };
+      const res = await api.post(`/workspaces/${workspaceId}/action-items`, payload);
       set((state) => ({
         items: [res.data, ...state.items],
       }));
