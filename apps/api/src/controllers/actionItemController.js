@@ -34,7 +34,7 @@ export const listActionItems = async (req, res, next) => {
 
     const nextCursor = actionItems.length === Number(limit) ? actionItems[actionItems.length - 1].id : null;
 
-    res.json({ data: actionItems, nextCursor });
+    res.json({ items: actionItems, nextCursor });
   } catch (error) {
     next(error);
   }
