@@ -70,10 +70,18 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
   };
 
   const updateActiveFormats = useCallback(() => {
+    if (!editorRef.current) return;
     const formats = new Set();
-    if (document.queryCommandState('bold')) formats.add('bold');
-    if (document.queryCommandState('italic')) formats.add('italic');
-    if (document.queryCommandState('underline')) formats.add('underline');
+    // Check each format state
+    try {
+      if (document.queryCommandState('bold')) formats.add('bold');
+    } catch (e) {}
+    try {
+      if (document.queryCommandState('italic')) formats.add('italic');
+    } catch (e) {}
+    try {
+      if (document.queryCommandState('underline')) formats.add('underline');
+    } catch (e) {}
     setActiveFormats(formats);
   }, []);
 
@@ -157,7 +165,11 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
       restoreCursor(el, savedStart);
     }
     
-    updateActiveFormats();
+    // Force update active formats after command
+    setTimeout(() => {
+      updateActiveFormats();
+    }, 0);
+    
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML);
     }
@@ -205,7 +217,8 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
         onInput={handleInput}
         onFocus={() => {
           setIsFocused(true);
-          updateActiveFormats();
+          // Delay to let browser establish focus
+          setTimeout(() => updateActiveFormats(), 0);
         }}
         onBlur={() => {
           setIsFocused(false);
