@@ -78,8 +78,21 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
   }, []);
 
   const execCommand = useCallback((command) => {
+    const el = editorRef.current;
+    if (!el) return;
+    
+    // Save cursor position
+    const sel = window.getSelection();
+    const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+    const savedStart = range && el.contains(range.startContainer) ? getTextOffset(el, range.startContainer, range.startOffset) : null;
+    
     document.execCommand(command, false, null);
-    editorRef.current?.focus();
+    
+    // Restore cursor position
+    if (savedStart !== null && savedStart <= (el.innerText || '').length) {
+      restoreCursor(el, savedStart);
+    }
+    
     updateActiveFormats();
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML);

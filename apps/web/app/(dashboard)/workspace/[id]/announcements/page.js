@@ -117,9 +117,7 @@ export default function AnnouncementsPage() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await api.post(`/workspaces/${workspaceId}/attachments`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+       const res = await api.post(`/workspaces/${workspaceId}/announcements/attachments`, formData);
 
       setAttachmentUrl(res.data.url);
       toast.success('Attachment uploaded.');
