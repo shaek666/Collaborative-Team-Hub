@@ -167,7 +167,7 @@ export default function MembersPage() {
                             {member.role}
                           </Badge>
                           <div className="relative">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Options for ${member.user?.name}`} onClick={(e) => { e.stopPropagation(); setOpenMemberMenu(openMemberMenu === member.userId ? null : member.userId); }}>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`Options for ${member.user?.name}`} onClick={(e) => { e.stopPropagation(); if (member.role !== 'ADMIN') { setOpenMemberMenu(openMemberMenu === member.userId ? null : member.userId); } }} disabled={member.role === 'ADMIN'}>
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                             {openMemberMenu === member.userId && member.role !== 'ADMIN' && (
