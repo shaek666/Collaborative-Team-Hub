@@ -94,48 +94,39 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     
     el.focus();
     
-    // Try execCommand first
-    const command = isBullet ? 'insertUnorderedList' : 'insertOrderedList';
-    document.execCommand(command, false, null);
+    // Get current content
+    const currentContent = el.innerHTML || '';
+    let newHTML;
     
-    // Check if list was created
-    setTimeout(() => {
-      if (!el.querySelector('ul, ol')) {
-        // Manually create list
-        const currentContent = el.innerHTML || '';
-        let newHTML;
-        
-        if (!currentContent.trim() || currentContent === '<br>' || currentContent === '<div><br></div>') {
-          newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
-        } else {
-          // Wrap each line in li
-          const lines = currentContent.split(/<br\s*\/?>/).filter(l => l.trim());
-          if (lines.length === 0) {
-            newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
-          } else {
-            const items = lines.map(line => `<li>${line}</li>`).join('');
-            newHTML = `<${listTag}>${items}</${listTag}>`;
-          }
-        }
-        
-        el.innerHTML = newHTML;
-        
-        // Place cursor inside the first li
-        const firstLi = el.querySelector('li');
-        if (firstLi) {
-          const range = document.createRange();
-          range.selectNodeContents(firstLi);
-          range.collapse(false);
-          const sel = window.getSelection();
-          sel.removeAllRanges();
-          sel.addRange(range);
-          el.focus();
-        }
+    if (!currentContent.trim() || currentContent === '<br>' || currentContent === '<div><br></div>') {
+      newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+    } else {
+      // Wrap each line in li
+      const lines = currentContent.split(/<br\s*\/?>/).filter(l => l.trim());
+      if (lines.length === 0) {
+        newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+      } else {
+        const items = lines.map(line => `<li>${line}</li>`).join('');
+        newHTML = `<${listTag}>${items}</${listTag}>`;
       }
-      
-      updateActiveFormats();
-      onChange(el.innerHTML);
-    }, 100);
+    }
+    
+    el.innerHTML = newHTML;
+    
+    // Place cursor inside the first li
+    const firstLi = el.querySelector('li');
+    if (firstLi) {
+      const range = document.createRange();
+      range.selectNodeContents(firstLi);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      el.focus();
+    }
+    
+    updateActiveFormats();
+    onChange(el.innerHTML);
   }, [onChange, updateActiveFormats]);
 
   const execCommand = useCallback((command) => {
