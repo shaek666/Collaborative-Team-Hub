@@ -16,21 +16,20 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
   const [isFocused, setIsFocused] = useState(false);
   const [activeFormats, setActiveFormats] = useState(new Set());
   const isComposing = useRef(false);
-  const skipNextInput = useRef(false);
 
-  // Set content only when value changes externally (not from user input)
+  // Set content only when value changes externally
   useEffect(() => {
     if (editorRef.current && !isComposing.current) {
       const el = editorRef.current;
       if (value !== el.innerHTML) {
-        // Save cursor position
         const sel = window.getSelection();
         const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-        const savedStart = range && el.contains(range.startContainer) ? getTextOffset(el, range.startContainer, range.startOffset) : null;
-
+        const savedStart = range && el.contains(range.startContainer) 
+          ? getTextOffset(el, range.startContainer, range.startOffset) 
+          : null;
+        
         el.innerHTML = value || '';
-
-        // Restore cursor position
+        
         if (savedStart !== null && savedStart <= (el.innerText || '').length) {
           restoreCursor(el, savedStart);
         }
@@ -38,7 +37,6 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     }
   }, [value]);
 
-  // Get character offset within an element
   const getTextOffset = (root, container, offset) => {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     let charOffset = 0;
@@ -50,7 +48,6 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     return charOffset;
   };
 
-  // Restore cursor to a character offset
   const restoreCursor = (root, offset) => {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     let charOffset = 0;
@@ -72,99 +69,73 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
   const updateActiveFormats = useCallback(() => {
     if (!editorRef.current) return;
     const formats = new Set();
-    // Check each format state
-    try {
-      if (document.queryCommandState('bold')) formats.add('bold');
-    } catch (e) {}
-    try {
-      if (document.queryCommandState('italic')) formats.add('italic');
-    } catch (e) {}
-    try {
-      if (document.queryCommandState('underline')) formats.add('underline');
-    } catch (e) {}
+    try { if (document.queryCommandState('bold')) formats.add('bold'); } catch(e) {}
+    try { if (document.queryCommandState('italic')) formats.add('italic'); } catch(e) {}
+    try { if (document.queryCommandState('underline')) formats.add('underline'); } catch(e) {}
     setActiveFormats(formats);
   }, []);
-
-  const insertList = useCallback((type) => {
-    const el = editorRef.current;
-    if (!el) return;
-    
-    const isBullet = type === 'bullet-list';
-    const listTag = isBullet ? 'ul' : 'ol';
-    
-    el.focus();
-    
-    // Get current content
-    const currentContent = el.innerHTML || '';
-    let newHTML;
-    
-    if (!currentContent.trim() || currentContent === '<br>' || currentContent === '<div><br></div>') {
-      newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
-    } else {
-      // Wrap each line in li
-      const lines = currentContent.split(/<br\s*\/?>/).filter(l => l.trim());
-      if (lines.length === 0) {
-        newHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
-      } else {
-        const items = lines.map(line => `<li>${line}</li>`).join('');
-        newHTML = `<${listTag}>${items}</${listTag}>`;
-      }
-    }
-    
-    el.innerHTML = newHTML;
-    
-    // Place cursor inside the first li
-    const firstLi = el.querySelector('li');
-    if (firstLi) {
-      const range = document.createRange();
-      range.selectNodeContents(firstLi);
-      range.collapse(false);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-      el.focus();
-    }
-    
-    updateActiveFormats();
-    onChange(el.innerHTML);
-  }, [onChange, updateActiveFormats]);
 
   const execCommand = useCallback((command) => {
     const el = editorRef.current;
     if (!el) return;
-    
-    // For list commands, use insertList handler
+
+    // Handle list commands separately
     if (command === 'bullet-list' || command === 'numbered-list') {
-      insertList(command);
+      const listTag = command === 'bullet-list' ? 'ul' : 'ol';
+      el.focus();
+      
+      // Get selected text or all content
+      const sel = window.getSelection();
+      const selectedText = sel.toString().trim();
+      let contentToWrap = selectedText || el.innerText || '';
+      
+      // Create list items
+      let listHTML;
+      if (!contentToWrap || contentToWrap === 'Type here...') {
+        listHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+      } else {
+        const lines = contentToWrap.split('\n').filter(l => l.trim());
+        if (lines.length === 0) {
+          listHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+        } else {
+          const items = lines.map(l => `<li>${l}</li>`).join('');
+          listHTML = `<${listTag}>${items}</${listTag}>`;
+        }
+      }
+      
+      el.innerHTML = listHTML;
+      
+      // Place cursor in first li
+      const firstLi = el.querySelector('li');
+      if (firstLi) {
+        const range = document.createRange();
+        range.selectNodeContents(firstLi);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      
+      onChange(el.innerHTML);
       return;
     }
-    
-    // Ensure editor is focused before executing command
-    if (document.activeElement !== el) {
-      el.focus();
-    }
-    
-    // Save cursor position for text formatting commands
+
+    // Handle text formatting commands
+    el.focus();
     const sel = window.getSelection();
     const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-    const savedStart = range && el.contains(range.startContainer) ? getTextOffset(el, range.startContainer, range.startOffset) : null;
-    
+    const savedStart = range && el.contains(range.startContainer) 
+      ? getTextOffset(el, range.startContainer, range.startOffset) 
+      : null;
+
     document.execCommand(command, false, null);
-    
-    // Restore cursor position
+
     if (savedStart !== null && savedStart <= (el.innerText || '').length) {
       restoreCursor(el, savedStart);
     }
-    
-    // Force update active formats after command
-    setTimeout(() => {
-      updateActiveFormats();
-    }, 0);
-    
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-  }, [onChange, updateActiveFormats, insertList]);
+
+    updateActiveFormats();
+    onChange(el.innerHTML);
+  }, [onChange, updateActiveFormats]);
 
   const handleInput = useCallback(() => {
     if (editorRef.current && !isComposing.current) {
@@ -178,16 +149,16 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
       <div className="flex items-center gap-1 px-3 py-2 bg-slate-800/30 border-b border-slate-800">
         {TOOLBAR_BUTTONS.map((btn) => (
           <button
-             key={btn.command}
-             type="button"
-             onClick={() => execCommand(btn.command)}
-             aria-label={btn.label}
-             className={cn(
-               'w-8 h-8 flex items-center justify-center rounded text-sm transition-colors text-slate-400 hover:bg-slate-700 hover:text-slate-200',
-               btn.className,
-               activeFormats.has(btn.command) && 'bg-blue-600/20 text-blue-400'
-             )}
-           >
+            key={btn.command}
+            type="button"
+            onClick={() => execCommand(btn.command)}
+            aria-label={btn.label}
+            className={cn(
+              'w-8 h-8 flex items-center justify-center rounded text-sm transition-colors text-slate-400 hover:bg-slate-700 hover:text-slate-200',
+              btn.className,
+              activeFormats.has(btn.command) && 'bg-blue-600/20 text-blue-400'
+            )}
+          >
             {btn.icon}
           </button>
         ))}
@@ -208,7 +179,6 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
         onInput={handleInput}
         onFocus={() => {
           setIsFocused(true);
-          // Delay to let browser establish focus
           setTimeout(() => updateActiveFormats(), 0);
         }}
         onBlur={() => {
