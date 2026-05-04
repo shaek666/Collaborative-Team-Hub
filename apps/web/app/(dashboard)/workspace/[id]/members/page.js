@@ -48,7 +48,8 @@ export default function MembersPage() {
       }
     };
     load();
-  }, [workspaceId, fetchWorkspaces, setActiveWorkspace, workspaces]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId]);
 
   const memberListRef = useRef(null);
 
@@ -84,9 +85,10 @@ export default function MembersPage() {
     try {
       await api.delete(`/workspaces/${workspaceId}/members/${userId}`);
       toast.success(`${userName} removed`);
-      await fetchWorkspaces();
-      const current = workspaces.find((ws) => ws.id === workspaceId);
-      if (current) await setActiveWorkspace(current);
+      // Refresh workspace data without re-triggering the effect
+      const res = await api.get(`/workspaces/${workspaceId}`);
+      const { setActiveWorkspace } = useWorkspaceStore.getState();
+      setActiveWorkspace(res.data);
       setOpenMemberMenu(null);
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to remove member'));

@@ -10,28 +10,28 @@ export const useWorkspaceStore = create(
       members: [],
       onlineMembers: [],
 
-      fetchWorkspaces: async () => {
-        try {
-          const res = await api.get('/workspaces');
-          const currentActive = get().activeWorkspace;
-          let match = currentActive 
-            ? res.data.find((ws) => ws.id === currentActive.id)
-            : null;
-          
-          if (!match && res.data.length > 0) {
-            match = res.data[0];
-          }
-
-          if (match && res.data.length > 0) {
-            const wsRes = await api.get(`/workspaces/${match.id}`);
-            set({ workspaces: res.data, activeWorkspace: match, members: wsRes.data.members });
-          } else {
-            set({ workspaces: res.data, activeWorkspace: match, members: [] });
-          }
-        } catch (error) {
-          throw error;
-        }
-      },
+       fetchWorkspaces: async () => {
+         try {
+           const res = await api.get('/workspaces');
+           const currentActive = get().activeWorkspace;
+           let match = currentActive 
+             ? res.data.find((ws) => ws.id === currentActive.id)
+             : null;
+           
+           if (!match && res.data.length > 0) {
+             match = res.data[0];
+           }
+           
+           if (match) {
+             const wsRes = await api.get(`/workspaces/${match.id}`);
+             set({ workspaces: res.data, activeWorkspace: match, members: wsRes.data.members });
+           } else {
+             set({ workspaces: res.data, activeWorkspace: match, members: [] });
+           }
+         } catch (error) {
+           throw error;
+         }
+       },
 
       setActiveWorkspace: async (workspace) => {
         try {
