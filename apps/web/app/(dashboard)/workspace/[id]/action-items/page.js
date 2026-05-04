@@ -160,8 +160,8 @@ export default function ActionItemsPage() {
               </div>
               <form onSubmit={handleCreateItem} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 mb-1 block">Title</label>
-                  <Input value={newItem.title} onChange={(e) => setNewItem({ ...newItem, title: e.target.value })} placeholder="What needs to be done?" required className="bg-slate-950/50 border-slate-800" />
+                  <label htmlFor="action-item-title" className="text-sm font-medium text-slate-300 mb-1 block">Title</label>
+                  <Input id="action-item-title" value={newItem.title} onChange={(e) => setNewItem({ ...newItem, title: e.target.value })} placeholder="What needs to be done?" required className="bg-slate-950/50 border-slate-800" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-300 mb-1 block">Description</label>
