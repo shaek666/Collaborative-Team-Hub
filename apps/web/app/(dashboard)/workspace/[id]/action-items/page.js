@@ -66,16 +66,13 @@ export default function ActionItemsPage() {
     if (!newItem.title.trim()) return;
     setCreating(true);
     try {
-      await createItem(workspaceId, {
-        ...newItem,
-        assigneeId: newItem.assigneeId || null,
-        dueDate: newItem.dueDate || null,
-      });
+      const data = await createItem(workspaceId, { ...newItem, assigneeId: newItem.assigneeId || undefined, dueDate: newItem.dueDate || undefined });
       toast.success('Action item created');
       setNewItem({ title: '', description: '', priority: 'MEDIUM', dueDate: '', assigneeId: '' });
       setShowCreateModal(false);
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Failed to create action item'));
+      setShowCreateModal(false); // Close modal on error too
     } finally {
       setCreating(false);
     }
