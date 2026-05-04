@@ -77,6 +77,36 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     setActiveFormats(formats);
   }, []);
 
+  const insertList = useCallback((type) => {
+    const el = editorRef.current;
+    if (!el) return;
+    
+    el.focus();
+    
+    // Get current selection
+    const sel = window.getSelection();
+    const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+    
+    // If no selection or cursor is at start, ensure we have a line to convert
+    if (!range || !range.startContainer || !el.contains(range.startContainer)) {
+      // Place cursor at end and insert a space if empty
+      const newRange = document.createRange();
+      newRange.selectNodeContents(el);
+      newRange.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(newRange);
+    }
+    
+    // Try execCommand first
+    const command = type === 'bullet' ? 'insertUnorderedList' : 'insertOrderedList';
+    document.execCommand(command, false, null);
+    
+    updateActiveFormats();
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  }, [onChange, updateActiveFormats]);
+
   const execCommand = useCallback((command) => {
     const el = editorRef.current;
     if (!el) return;
@@ -86,31 +116,33 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
       el.focus();
     }
     
-    // For list commands, don't save/restore cursor - let browser handle it
-    const isListCommand = command === 'insertUnorderedList' || command === 'insertOrderedList';
+    // For list commands, use insertList handler
+    if (command === 'insertUnorderedList') {
+      insertList('bullet');
+      return;
+    }
+    if (command === 'insertOrderedList') {
+      insertList('numbered');
+      return;
+    }
     
-    if (!isListCommand) {
-      // Save cursor position for text formatting commands
-      const sel = window.getSelection();
-      const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
-      const savedStart = range && el.contains(range.startContainer) ? getTextOffset(el, range.startContainer, range.startOffset) : null;
-      
-      document.execCommand(command, false, null);
-      
-      // Restore cursor position
-      if (savedStart !== null && savedStart <= (el.innerText || '').length) {
-        restoreCursor(el, savedStart);
-      }
-    } else {
-      // For list commands, just execute and let browser handle cursor
-      document.execCommand(command, false, null);
+    // Save cursor position for text formatting commands
+    const sel = window.getSelection();
+    const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+    const savedStart = range && el.contains(range.startContainer) ? getTextOffset(el, range.startContainer, range.startOffset) : null;
+    
+    document.execCommand(command, false, null);
+    
+    // Restore cursor position
+    if (savedStart !== null && savedStart <= (el.innerText || '').length) {
+      restoreCursor(el, savedStart);
     }
     
     updateActiveFormats();
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML);
     }
-  }, [onChange, updateActiveFormats]);
+  }, [onChange, updateActiveFormats, insertList]);
 
   const handleInput = useCallback(() => {
     if (editorRef.current && !isComposing.current) {
@@ -124,19 +156,22 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
       <div className="flex items-center gap-1 px-3 py-2 bg-slate-800/30 border-b border-slate-800">
         {TOOLBAR_BUTTONS.map((btn) => (
           <button
-            key={btn.command}
-            type="button"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              execCommand(btn.command);
-            }}
-            aria-label={btn.label}
-            className={cn(
-              'w-8 h-8 flex items-center justify-center rounded text-sm transition-colors text-slate-400 hover:bg-slate-700 hover:text-slate-200',
-              btn.className,
-              activeFormats.has(btn.command) && 'bg-blue-600/20 text-blue-400'
-            )}
-          >
+             key={btn.command}
+             type="button"
+             onMouseDown={(e) => {
+               // Don't prevent default for list commands - they need default behavior
+               if (btn.command !== 'insertUnorderedList' && btn.command !== 'insertOrderedList') {
+                 e.preventDefault();
+               }
+               execCommand(btn.command);
+             }}
+             aria-label={btn.label}
+             className={cn(
+               'w-8 h-8 flex items-center justify-center rounded text-sm transition-colors text-slate-400 hover:bg-slate-700 hover:text-slate-200',
+               btn.className,
+               activeFormats.has(btn.command) && 'bg-blue-600/20 text-blue-400'
+             )}
+           >
             {btn.icon}
           </button>
         ))}
