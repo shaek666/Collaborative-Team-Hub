@@ -97,7 +97,10 @@ export const inviteMember = async (req, res, next) => {
       where: { email },
       select: { id: true, name: true, email: true } 
     });
-    if (!user) return sendError(res, 404, 'User with this email not found');
+    if (!user) {
+      console.log(`Invite failed: User not found with email: ${email}`);
+      return sendError(res, 404, 'User with this email not found');
+    }
 
     // Check if user is already a member
     const existingMember = await prisma.workspaceMember.findUnique({
