@@ -83,13 +83,11 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
     
     el.focus();
     
-    // Get current selection
     const sel = window.getSelection();
     const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
     
-    // If no selection or cursor is at start, ensure we have a line to convert
-    if (!range || !range.startContainer || !el.contains(range.startContainer)) {
-      // Place cursor at end and insert a space if empty
+    // Ensure we have a valid cursor position in the editor
+    if (!range || !el.contains(range.startContainer)) {
       const newRange = document.createRange();
       newRange.selectNodeContents(el);
       newRange.collapse(false);
@@ -97,14 +95,37 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
       sel.addRange(newRange);
     }
     
-    // Try execCommand first
+    // Try execCommand
     const command = type === 'bullet' ? 'insertUnorderedList' : 'insertOrderedList';
     document.execCommand(command, false, null);
     
-    updateActiveFormats();
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
+    // Check if list was created; if not, manually create it
+    setTimeout(() => {
+      const hasList = el.querySelector('ul, ol');
+      if (!hasList) {
+        // Manually create list
+        const content = el.innerHTML || '';
+        if (content.trim()) {
+          const isBullet = type === 'bullet';
+          const listTag = isBullet ? 'ul' : 'ol';
+          const itemTag = 'li';
+          // Wrap existing content in list items
+          const lines = content.split('<br>').filter(l => l.trim());
+          if (lines.length === 0) {
+            el.innerHTML = `<${listTag}><${itemTag}>Type here...</${itemTag}></${listTag}>`;
+          } else {
+            const listItems = lines.map(line => `<${itemTag}>${line}</${itemTag}>`).join('');
+            el.innerHTML = `<${listTag}>${listItems}</${listTag}>`;
+          }
+        } else {
+          const isBullet = type === 'bullet';
+          const listTag = isBullet ? 'ul' : 'ol';
+          el.innerHTML = `<${listTag}><li>Type here...</li></${listTag}>`;
+        }
+        onChange(el.innerHTML);
+      }
+      updateActiveFormats();
+    }, 50);
   }, [onChange, updateActiveFormats]);
 
   const execCommand = useCallback((command) => {
