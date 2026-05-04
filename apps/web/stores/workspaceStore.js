@@ -60,11 +60,11 @@ export const useWorkspaceStore = create(
           throw error;
         }
       },
-    }),
 
-    clearWorkspace: () => {
-      set({ workspaces: [], activeWorkspace: null, members: [], onlineMembers: [] });
-    },
+      clearWorkspace: () => {
+        set({ workspaces: [], activeWorkspace: null, members: [], onlineMembers: [] });
+      },
+    }),
 
     {
       name: 'workspace-storage',
