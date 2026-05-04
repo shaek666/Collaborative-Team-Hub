@@ -1,5 +1,6 @@
 import { Inter } from 'next/font/google';
 import ThemeProvider from '../components/ThemeProvider';
+import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -26,7 +27,17 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className={`${inter.className} bg-slate-950 min-h-screen`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: { background: '#1e293b', color: '#f8fafc', border: '1px solid #334155' },
+              error: { style: { background: '#7f1d1d', color: '#fecaca', border: '1px solid #991b1b' } },
+              success: { style: { background: '#064e3b', color: '#a7f3d0', border: '1px solid #065f46' } },
+            }}
+          />
+        </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

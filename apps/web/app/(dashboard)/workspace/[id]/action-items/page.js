@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format } from 'date-fns';
 import { cn } from '../../../../../lib/utils';
+import api from '../../../../../lib/api';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../../../../lib/errors';
 
@@ -202,12 +203,12 @@ export default function ActionItemsPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-300 mb-1 block">Assignee</label>
-                  <select value={newItem.assigneeId} onChange={(e) => setNewItem({ ...newItem, assigneeId: e.target.value })} className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500/50">
-                    <option value="">Unassigned</option>
-                    {members.map(m => (
-                      <option key={m.user.id} value={m.user.id}>{m.user.name}</option>
-                    ))}
-                  </select>
+                   <select value={newItem.assigneeId} onChange={(e) => setNewItem({ ...newItem, assigneeId: e.target.value })} className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-blue-500/50">
+                     <option value="">Unassigned</option>
+                     {(members || []).map(m => (
+                       <option key={m.user?.id} value={m.user?.id}>{m.user?.name}</option>
+                     ))}
+                   </select>
                 </div>
                 <Button type="submit" className="w-full" disabled={creating || !newItem.title.trim()}>
                   {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create'}
