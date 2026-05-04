@@ -98,7 +98,6 @@ export const inviteMember = async (req, res, next) => {
       select: { id: true, name: true, email: true } 
     });
     if (!user) {
-      console.log(`Invite failed: User not found with email: ${email}`);
       return sendError(res, 404, 'User with this email not found');
     }
 
