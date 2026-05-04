@@ -135,10 +135,14 @@ export const inviteMember = async (req, res, next) => {
       })
     ]);
 
-    // Send email invitation (non-blocking)
-    sendWorkspaceInviteEmail(user.email, workspace.name, req.user.name).catch(() => {
-      // Silently fail email sending
-    });
+    // Send email invitation
+    try {
+      await sendWorkspaceInviteEmail(user.email, workspace.name, req.user.name);
+      console.log(`Invite email sent to ${user.email} for workspace ${workspace.name}`);
+    } catch (emailError) {
+      console.error('Failed to send invite email:', emailError);
+      // Don't fail the request if email fails
+    }
 
     // Notify the user about the new invite via Socket.io
     req.app.get('io').sockets.sockets.forEach((socket) => {
