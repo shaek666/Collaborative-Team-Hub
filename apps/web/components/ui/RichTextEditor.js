@@ -158,6 +158,10 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
           <button
             key={btn.command}
             type="button"
+            onMouseDown={(e) => {
+              // Prevent default to avoid stealing focus from editor
+              e.preventDefault();
+            }}
             onClick={() => execCommand(btn.command)}
             aria-label={btn.label}
             className={cn(
