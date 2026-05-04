@@ -158,12 +158,12 @@ export function RichTextEditor({ value, onChange, placeholder, className, id }) 
           <button
              key={btn.command}
              type="button"
+             onClick={() => execCommand(btn.command)}
              onMouseDown={(e) => {
-               // Don't prevent default for list commands - they need default behavior
+               // Prevent default to avoid stealing focus from editor (except for list commands)
                if (btn.command !== 'insertUnorderedList' && btn.command !== 'insertOrderedList') {
                  e.preventDefault();
                }
-               execCommand(btn.command);
              }}
              aria-label={btn.label}
              className={cn(
